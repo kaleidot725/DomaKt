@@ -47,6 +47,16 @@ public abstract class DomaStore<UiState : DomaState, UiAction : DomaAction, Even
 
     public abstract fun onAction(uiAction: UiAction)
 
+    public fun onReset() {
+        coroutineScope.cancel()
+        coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main + Dispatchers.IO)
+        uiState.update { initialUiState }
+        state = uiState
+            .onSubscription { onSetup() }
+            .stateIn(coroutineScope, SharingStarted.WhileSubscribed(), initialUiState)
+        event = _event.receiveAsFlow()
+    }
+
     public fun update(block: UiState.() -> UiState) {
         uiState.update { block(it) }
     }

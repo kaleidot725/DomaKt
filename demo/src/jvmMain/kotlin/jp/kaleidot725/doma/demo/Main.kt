@@ -20,11 +20,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import jp.kaleidot725.doma.demo.counter.platform.CounterPlatform
+import jp.kaleidot725.doma.demo.counter.platform.CounterPlatformAction
+import jp.kaleidot725.doma.demo.counter.repository.CounterRepository
+import jp.kaleidot725.doma.demo.counter.store.CounterStore
+import jp.kaleidot725.doma.demo.counter.store.CounterStoreEvent
 import jp.kaleidot725.doma.mvi.DomaRootContent
 import kotlinx.coroutines.launch
 
 fun main() = application {
-    val viewModel = remember { CounterViewModel() }
+    val repository = remember { CounterRepository() }
+    val platform = remember { CounterPlatform(repository) }
+    val store = remember { CounterStore(repository) }
 
     Window(
         onCloseRequest = ::exitApplication,
@@ -35,15 +42,15 @@ fun main() = application {
 
         MaterialTheme {
             DomaRootContent(
-                base = viewModel,
+                base = store,
                 onEvent = { effect ->
                     when (effect) {
-                        is CounterEvent.ShowMessage -> {
+                        is CounterStoreEvent.ShowMessage -> {
                             scope.launch { snackbarHostState.showSnackbar(effect.message) }
                         }
                     }
                 },
-            ) { state, onAction ->
+            ) { state, _ ->
                 Box(modifier = Modifier.fillMaxSize()) {
                     Column(
                         modifier = Modifier.fillMaxSize(),
@@ -58,17 +65,17 @@ fun main() = application {
                         Spacer(modifier = Modifier.height(32.dp))
 
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Button(onClick = { onAction(CounterAction.Decrement) }) {
+                            Button(onClick = { platform.onAction(CounterPlatformAction.Decrement) }) {
                                 Text("-")
                             }
-                            Button(onClick = { onAction(CounterAction.Increment) }) {
+                            Button(onClick = { platform.onAction(CounterPlatformAction.Increment) }) {
                                 Text("+")
                             }
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        Button(onClick = { onAction(CounterAction.Reset) }) {
+                        Button(onClick = { platform.onAction(CounterPlatformAction.Reset) }) {
                             Text("Reset")
                         }
                     }
