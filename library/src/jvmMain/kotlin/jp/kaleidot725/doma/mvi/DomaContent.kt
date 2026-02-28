@@ -8,7 +8,7 @@ import androidx.compose.runtime.getValue
 
 @Composable
 public fun <State : DomaState, Action : DomaAction, Event : DomaEvent> DomaRootContent(
-    base: DomaBase<State, Action, Event>,
+    base: DomaStore<State, Action, Event>,
     onEvent: (Event) -> Unit = {},
     content: @Composable ((State, ((Action) -> Unit)) -> Unit) = { _, _ -> },
 ) {
@@ -28,7 +28,7 @@ public fun <State : DomaState, Action : DomaAction, Event : DomaEvent> DomaRootC
 
 @Composable
 public fun <State : DomaState, Action : DomaAction, Event : DomaEvent> DomaChildContent(
-    base: DomaBase<State, Action, Event>,
+    base: DomaStore<State, Action, Event>,
     onEvent: (Event) -> Unit = {},
     content: @Composable (State, (Action) -> Unit) -> Unit = { _, _ -> },
 ) {
@@ -40,7 +40,7 @@ public fun <State : DomaState, Action : DomaAction, Event : DomaEvent> DomaChild
 
 @Composable
 public fun <State : DomaState, Action : DomaAction, Event : DomaEvent> DomaDialogContent(
-    base: DomaBase<State, Action, Event>,
+    base: DomaStore<State, Action, Event>,
     onEvent: (Event) -> Unit = {},
     content: @Composable (State, (Action) -> Unit) -> Unit = { _, _ -> },
 ) {

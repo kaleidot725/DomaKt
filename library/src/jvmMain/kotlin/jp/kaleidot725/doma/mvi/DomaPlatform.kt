@@ -43,10 +43,6 @@ public abstract class DomaBase<UiState : DomaState, UiAction : DomaAction, Event
 
     public abstract fun onSetup()
 
-    public abstract fun onRefresh()
-
-    public abstract fun onAction(uiAction: UiAction)
-
     public fun onReset() {
         coroutineScope.cancel()
         coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main + Dispatchers.IO)
@@ -62,6 +58,8 @@ public abstract class DomaBase<UiState : DomaState, UiAction : DomaAction, Event
                 )
         event = _event.receiveAsFlow()
     }
+
+    public abstract fun onAction(uiAction: UiAction)
 
     public fun update(block: UiState.() -> UiState) {
         uiState.update { block(it) }

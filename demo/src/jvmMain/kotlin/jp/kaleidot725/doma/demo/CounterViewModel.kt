@@ -1,8 +1,8 @@
 package jp.kaleidot725.doma.demo
 
-import jp.kaleidot725.doma.mvi.DomaBase
+import jp.kaleidot725.doma.mvi.DomaStore
 
-class CounterViewModel : DomaBase<CounterState, CounterAction, CounterEvent>(
+class CounterViewModel : DomaStore<CounterState, CounterAction, CounterEvent>(
     initialUiState = CounterState(),
 ) {
     override fun onSetup() {
