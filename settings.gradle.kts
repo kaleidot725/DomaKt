@@ -5,3 +5,4 @@ plugins {
 rootProject.name = "DomaKt"
 
 include(":library")
+include(":demo")
