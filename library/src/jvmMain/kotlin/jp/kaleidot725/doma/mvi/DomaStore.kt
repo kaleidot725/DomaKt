@@ -3,7 +3,6 @@ package jp.kaleidot725.doma.mvi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,24 +14,23 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-public abstract class DomaStore<UiState : DomaState, UiAction : DomaAction, Event : DomaEvent, Telegram : DomaTelegram>(
-    private val stores: List<DomaSubStore<*, *, *, Telegram>>,
+public abstract class DomaStore<UiState : DomaState,  UiAction: DomaAction, Event : DomaEvent, Broadcast : DomaBroadcast,>(
     private val initialUiState: UiState,
 ) {
     public var coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main + Dispatchers.IO)
         private set
 
     private val uiState: MutableStateFlow<UiState> = MutableStateFlow(initialUiState)
-
+    
     public var state: StateFlow<UiState> =
-        uiState
-            .onSubscription {
+        uiState.
+            onSubscription{
                 onSetup()
             }.stateIn(
-                coroutineScope,
-                SharingStarted.WhileSubscribed(),
-                initialUiState,
-            )
+            coroutineScope,
+            SharingStarted.WhileSubscribed(),
+            initialUiState,
+        )
         private set
 
     public val currentState: UiState get() = state.value
@@ -44,30 +42,12 @@ public abstract class DomaStore<UiState : DomaState, UiAction : DomaAction, Even
 
     public open fun onSetup() {}
 
-    public fun onReset() {
-        coroutineScope.cancel()
-        coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main + Dispatchers.IO)
-        uiState.update { initialUiState }
-        state =
-            uiState
-                .onSubscription {
-                    onSetup()
-                }.stateIn(
-                    coroutineScope,
-                    SharingStarted.WhileSubscribed(),
-                    initialUiState,
-                )
-        event = _event.receiveAsFlow()
-    }
-
     public abstract fun onAction(uiAction: UiAction)
 
-    public fun update(block: UiState.() -> UiState) {
-        uiState.update { block(it) }
-    }
+    public open fun onReceive(telegram: Broadcast) {}
 
-    public fun broadcast(telegram: Telegram) {
-        stores.forEach { it.onReceive(telegram) }
+    public suspend fun update(block: suspend UiState.() -> UiState) {
+        uiState.update { block(it) }
     }
 
     public fun event(effect: Event) {

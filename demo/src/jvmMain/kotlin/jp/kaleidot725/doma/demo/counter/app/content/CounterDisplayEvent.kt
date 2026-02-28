@@ -1,4 +1,4 @@
-package jp.kaleidot725.doma.demo.counter.display
+package jp.kaleidot725.doma.demo.counter.app.content
 
 import jp.kaleidot725.doma.mvi.DomaEvent
 

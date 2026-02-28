@@ -1,39 +1,27 @@
 package jp.kaleidot725.doma.mvi
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 
 @Composable
-public fun <State : DomaState, Action : DomaAction, Event : DomaEvent, Telegram : DomaTelegram> DomaContent(
-    platforms: DomaStore<State, Action, Event, Telegram>,
-    onEvent: (Event) -> Unit = {},
-    content: @Composable ((State, ((Action) -> Unit)) -> Unit) = { _, _ -> },
+public fun <Broadcast : DomaBroadcast> DomaContainer(
+    storeContainer: DomaStoreContainer<Broadcast>,
+    content: @Composable ((Broadcast) -> Unit) -> Unit = { _ -> },
 ) {
-    val state by platforms.state.collectAsState()
-    val onAction = platforms::onAction
-    LaunchedEffect(Unit) {
-        platforms.onSetup()
-    }
-    LaunchedEffect(Unit) {
-        platforms.event.collect { onEvent(it) }
-    }
-    DisposableEffect(Unit) {
-        onDispose { platforms.onReset() }
-    }
-    content(state, onAction)
+    val onBroadcast = storeContainer::onBroadcast
+    content(onBroadcast)
 }
 
 @Composable
-public fun <State : DomaState, Action: DomaAction, Event : DomaEvent, Telegram : DomaTelegram> DomaSubContent(
-    subStore: DomaSubStore<State,Action, Event, Telegram>,
+public fun <State : DomaState, Action: DomaAction, Event : DomaEvent, Broadcast : DomaBroadcast> DomaContent(
+    store: DomaStore<State,Action, Event, Broadcast>,
     onEvent: (Event) -> Unit = {},
     content: @Composable ((State, ((Action) -> Unit)) -> Unit) = { _, _ -> },
 ) {
-    val state by subStore.state.collectAsState()
-    val onAction = subStore::onAction
-    LaunchedEffect(subStore) { subStore.event.collect { onEvent(it) } }
+    val state by store.state.collectAsState()
+    val onAction = store::onAction
+    LaunchedEffect(store) { store.event.collect { onEvent(it) } }
     content(state, onAction)
 }

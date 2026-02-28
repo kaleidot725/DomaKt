@@ -18,20 +18,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import jp.kaleidot725.doma.demo.counter.display.CounterDisplayEvent
-import jp.kaleidot725.doma.demo.counter.display.CounterDisplaySubStore
-import jp.kaleidot725.doma.demo.counter.operator.CounterOperatorAction
-import jp.kaleidot725.doma.demo.counter.operator.CounterOperatorStore
+import jp.kaleidot725.doma.demo.counter.app.content.CounterDisplayEvent
+import jp.kaleidot725.doma.demo.counter.app.content.CounterDisplayStore
+import jp.kaleidot725.doma.demo.counter.app.CounterStoreContainer
+import jp.kaleidot725.doma.demo.counter.app.content.CounterDisplayAction
+import jp.kaleidot725.doma.demo.counter.app.state.CounterAppBroadcast
 import jp.kaleidot725.doma.demo.counter.repository.CounterRepository
+import jp.kaleidot725.doma.mvi.DomaContainer
 import jp.kaleidot725.doma.mvi.DomaContent
-import jp.kaleidot725.doma.mvi.DomaSubContent
 import kotlinx.coroutines.launch
 
 fun main() =
     application {
         val repository = remember { CounterRepository() }
-        val displayStore = remember { CounterDisplaySubStore(repository) }
-        val operatorPlatform = remember { CounterOperatorStore(subStores = listOf(displayStore), repository = repository) }
+        val store = remember { CounterDisplayStore(repository) }
+        val storeContainer = remember { CounterStoreContainer(stores = listOf(store)) }
 
         Window(
             onCloseRequest = ::exitApplication,
@@ -39,26 +40,15 @@ fun main() =
         ) {
             val scope = rememberCoroutineScope()
             MaterialTheme {
-                DomaContent(platforms = operatorPlatform) { _, onAction ->
+                DomaContainer(storeContainer = storeContainer) { onBroadcast ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Button(onClick = { onAction(CounterOperatorAction.Decrement) }) {
-                                Text("-")
-                            }
-                            Button(onClick = { onAction(CounterOperatorAction.Increment) }) {
-                                Text("+")
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Button(onClick = { onAction(CounterOperatorAction.Reset) }) {
-                            Text("Reset")
+                        Button(onClick = { onBroadcast(CounterAppBroadcast.Restart) }) {
+                            Text("Restart")
                         }
 
                         val snackbarHostState = remember { SnackbarHostState() }
-                        DomaSubContent(
-                            subStore = displayStore,
+                        DomaContent(
+                            store = store,
                             onEvent = {
                                 when (it) {
                                     is CounterDisplayEvent.ShowMessage -> {
@@ -67,6 +57,20 @@ fun main() =
                                 }
                             },
                         ) { state, onAction ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                Button(onClick = { onAction(CounterDisplayAction.Decrement) }) {
+                                    Text("-")
+                                }
+                                Button(onClick = { onAction(CounterDisplayAction.Increment) }) {
+                                    Text("+")
+                                }
+                                Button(onClick = { onAction(CounterDisplayAction.Reset) }) {
+                                    Text("Reset")
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
                             Text(
                                 text = "${state.count}",
                                 fontSize = 72.sp,
