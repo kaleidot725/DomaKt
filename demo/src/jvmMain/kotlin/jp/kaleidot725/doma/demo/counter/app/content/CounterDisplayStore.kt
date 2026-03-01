@@ -8,8 +8,8 @@ import kotlinx.coroutines.launch
 class CounterDisplayStore(
     private val repository: CounterRepository,
 ) : DomaStore<CounterDisplayState, CounterDisplayAction, CounterDisplayEvent, CounterAppBroadcast>(
-    initialUiState = CounterDisplayState(),
-) {
+        initialUiState = CounterDisplayState(),
+    ) {
     override fun onSetup() {
         coroutineScope.launch {
             repository.count.collect { count ->
@@ -37,9 +37,9 @@ class CounterDisplayStore(
         }
     }
 
-    override fun onReceive(telegram: CounterAppBroadcast) {
+    override fun onReceive(broadcast: CounterAppBroadcast) {
         coroutineScope.launch {
-            when (telegram) {
+            when (broadcast) {
                 is CounterAppBroadcast.Refresh -> {
                     event(CounterDisplayEvent.ShowMessage("Restart"))
                 }

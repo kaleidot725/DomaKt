@@ -3,20 +3,19 @@ package jp.kaleidot725.doma.mvi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.UUID
 
-public abstract class DomaStore<UiState : DomaState,  UiAction: DomaAction, Event : DomaEvent, Broadcast : DomaBroadcast,>(
+public abstract class DomaStore<UiState : DomaState, UiAction : DomaAction, Event : DomaEvent, Broadcast : DomaBroadcast>(
     private val initialUiState: UiState,
 ) {
     public var coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main + Dispatchers.IO)
@@ -25,14 +24,14 @@ public abstract class DomaStore<UiState : DomaState,  UiAction: DomaAction, Even
     private val uiState: MutableStateFlow<UiState> = MutableStateFlow(initialUiState)
 
     public var state: StateFlow<UiState> =
-        uiState.
-            onSubscription{
+        uiState
+            .onSubscription {
                 onSetup()
             }.stateIn(
-            coroutineScope,
-            SharingStarted.WhileSubscribed(),
-            initialUiState,
-        )
+                coroutineScope,
+                SharingStarted.WhileSubscribed(),
+                initialUiState,
+            )
         private set
 
     public val currentState: UiState get() = state.value
@@ -46,9 +45,24 @@ public abstract class DomaStore<UiState : DomaState,  UiAction: DomaAction, Even
 
     public abstract fun onAction(uiAction: UiAction)
 
-    public open fun onReceive(telegram: Broadcast) {}
+    public open fun onReceive(broadcast: Broadcast) {}
 
-    public suspend fun update(block: suspend UiState.() -> UiState) {
+    public fun cancel() {
+        coroutineScope.cancel()
+        coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main + Dispatchers.IO)
+        state =
+            uiState
+                .onSubscription {
+                    onSetup()
+                }.stateIn(
+                    coroutineScope,
+                    SharingStarted.WhileSubscribed(),
+                    initialUiState,
+                )
+        event = _event.receiveAsFlow()
+    }
+
+    public fun update(block: UiState.() -> UiState) {
         uiState.update { block(it) }
     }
 

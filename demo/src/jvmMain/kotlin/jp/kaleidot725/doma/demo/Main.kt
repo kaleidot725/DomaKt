@@ -43,7 +43,7 @@ fun main() =
         ) {
             val scope = rememberCoroutineScope()
             MaterialTheme {
-                DomaContainer(storeContainer = storeContainer) { key, onRefresh, onBroadcast ->
+                DomaContainer(storeContainer = storeContainer) { onRefresh, onBroadcast ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Button(onClick = { onRefresh() }) {
                             Text("Refresh View")
@@ -55,7 +55,6 @@ fun main() =
 
                         val snackbarHostState = remember { SnackbarHostState() }
                         DomaContent(
-                            containerKey = key,
                             store = store,
                             onEvent = {
                                 when (it) {
