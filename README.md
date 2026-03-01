@@ -5,17 +5,16 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![](https://jitpack.io/v/kaleidot725/Doma.svg)](https://jitpack.io/#kaleidot725/Doma)
 
-A lightweight MVI (Model-View-Intent) library for **Compose Desktop**, providing a clean coroutine-based architecture for building reactive UIs.
-
-Compose Desktop has no built-in navigation system, so screens are often composed of multiple independent Composables that need to share state and stay in sync. Doma addresses this with two Desktop-oriented features: **View Refresh** — forces the entire view tree to reconstruct when needed (e.g. language or theme changes), and **Broadcast** — delivers a typed message from the container to all registered Stores simultaneously, allowing loosely coupled components to react to the same event.
+A lightweight MVI library for **Compose Desktop**.
+Designed for Desktop's multi-Composable layouts, Doma adds **Broadcast** to notify all Stores simultaneously and **View Refresh** to reconstruct the view tree on demand.
 
 ![demo](docs/demo.png)
 
 ## Features
 
 - 🏗️ **MVI Architecture** - Clear separation of State, Action, Event, and Broadcast
-- 🔄 **Store & StoreContainer** - Store manages state autonomously; StoreContainer coordinates multiple Stores
-- 📡 **Broadcast** - Type-safe messages delivered from StoreContainer to all registered Stores simultaneously
+- 🔄 **Store & Container** - Store manages state autonomously; Container coordinates multiple Stores
+- 📡 **Broadcast** - Type-safe messages delivered from Container to all registered Stores simultaneously
 - 🖥️ **View Refresh** - Forces the view tree to reconstruct on demand while preserving Store state
 - ⚡ **Coroutine-Based** - Built on Kotlin Coroutines and StateFlow
 - 🎨 **Compose Integration** - Ready-to-use Composable helpers with automatic lifecycle management
@@ -79,8 +78,8 @@ dependencies {
 
 Doma provides two complementary components:
 
-- **DomaStore** — Manages UI state for a specific screen component. Handles user actions directly and reacts to broadcasts from the StoreContainer.
-- **DomaStoreContainer** — Coordinates multiple Stores. Delivers typed `DomaBroadcast` messages to all registered Stores, and can trigger a view refresh.
+- **DomaStore** — Manages UI state for a specific screen component. Handles user actions directly and reacts to broadcasts from the Container.
+- **DomaContainer** — Coordinates multiple Stores. Delivers typed `DomaBroadcast` messages to all registered Stores, and can trigger a view refresh.
 
 ```
 User Action
@@ -90,11 +89,11 @@ DomaStore.onAction()
     │
     └── update { ... } ──▶ UI re-renders
 
-DomaStoreContainer.broadcast(broadcast)      ← Notify all Stores simultaneously
+DomaContainer.broadcast(broadcast)      ← Notify all Stores simultaneously
     │
     └── DomaStore.onReceive(broadcast) ──▶ update { ... } ──▶ UI re-renders
 
-DomaStoreContainer.refresh()                 ← Reconstruct the view tree
+DomaContainer.refresh()                 ← Reconstruct the view tree
     │
     └── View reconstructs (Store state is preserved)
 ```
@@ -119,7 +118,7 @@ sealed class CounterEvent : DomaEvent {
     data class ShowMessage(val message: String) : CounterEvent()
 }
 
-// Broadcast: messages delivered from StoreContainer to all Stores
+// Broadcast: messages delivered from Container to all Stores
 sealed class CounterBroadcast : DomaBroadcast {
     data object Refresh : CounterBroadcast()
 }
@@ -164,19 +163,19 @@ class CounterStore(
 }
 ```
 
-### 3. Create a StoreContainer
+### 3. Create a Container
 
-`DomaStoreContainer` coordinates multiple Stores. Use `broadcast` to send a typed message to all registered Stores, and `refresh` to reconstruct the view.
+`DomaContainer` coordinates multiple Stores. Use `broadcast` to send a typed message to all registered Stores, and `refresh` to reconstruct the view.
 
 ```kotlin
-class CounterStoreContainer(
+class CounterContainer(
     stores: List<DomaStore<*, *, *, CounterBroadcast>>,
-) : DomaStoreContainer<CounterBroadcast>(stores = stores)
+) : DomaContainer<CounterBroadcast>(stores = stores)
 ```
 
 ### 4. Connect to Compose UI
 
-Instantiate stores in the entry point, then use `DomaContainer` for layout and `DomaContent` inside it to observe each Store. `DomaContent` automatically responds to `refresh()` when nested inside `DomaContainer`.
+Instantiate stores in the entry point, then use `DomaApp` for layout and `DomaContent` inside it to observe each Store. `DomaContent` automatically responds to `refresh()` when nested inside `DomaApp`.
 
 **Entry point** — create stores once and pass them down:
 
@@ -184,22 +183,22 @@ Instantiate stores in the entry point, then use `DomaContainer` for layout and `
 fun main() = application {
     val repository = remember { CounterRepository() }
     val store = remember { CounterStore(repository) }
-    val storeContainer = remember { CounterStoreContainer(stores = listOf(store)) }
+    val container = remember { CounterContainer(stores = listOf(store)) }
 
     Window(onCloseRequest = ::exitApplication, title = "Counter") {
         MaterialTheme {
-            CounterApp(storeContainer = storeContainer, store = store)
+            CounterApp(container = container, store = store)
         }
     }
 }
 ```
 
-**App composable** — wrap with `DomaContainer` and expose refresh/broadcast controls:
+**App composable** — wrap with `DomaApp` and expose refresh/broadcast controls:
 
 ```kotlin
 @Composable
-fun CounterApp(storeContainer: CounterStoreContainer, store: CounterStore) {
-    DomaContainer(storeContainer = storeContainer) { onRefresh, onBroadcast ->
+fun CounterApp(container: CounterContainer, store: CounterStore) {
+    DomaApp(container = container) { onRefresh, onBroadcast ->
         Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Row(modifier = Modifier.align(Alignment.TopEnd)) {
                 Button(onClick = { onRefresh() }) { Text("Refresh View") }
@@ -256,12 +255,12 @@ Base class for managing UI state within a specific screen component.
 | `coroutineScope` | CoroutineScope tied to the Store's lifecycle |
 | `onSetup()` | Called when the Store is first subscribed to |
 | `onAction(uiAction)` | Called when a user action is dispatched |
-| `onReceive(broadcast)` | Called when the StoreContainer broadcasts a message |
+| `onReceive(broadcast)` | Called when the Container broadcasts a message |
 | `update { }` | Updates the UI state |
 | `event(effect)` | Emits a one-time side effect |
 | `cancel()` | Cancels the coroutine scope and prepares the Store for reuse |
 
-### DomaStoreContainer
+### DomaContainer
 
 Base class for coordinating multiple Stores.
 
@@ -272,12 +271,12 @@ Base class for coordinating multiple Stores.
 
 ### Composable Helpers
 
-#### DomaContainer
+#### DomaApp
 
-Manages a `DomaStoreContainer` and provides `onRefresh` and `onBroadcast` callbacks to the content block. `DomaContent` placed inside automatically responds to `refresh()`.
+Manages a `DomaContainer` and provides `onRefresh` and `onBroadcast` callbacks to the content block. `DomaContent` placed inside automatically responds to `refresh()`.
 
 ```kotlin
-DomaContainer(storeContainer = myStoreContainer) { onRefresh, onBroadcast ->
+DomaApp(container = myContainer) { onRefresh, onBroadcast ->
     // Compose UI
     DomaContent(store = myStore) { state, onAction ->
         // Compose UI
@@ -300,7 +299,7 @@ DomaContent(
 
 ### DomaBroadcast
 
-Marker interface for type-safe messages delivered from `DomaStoreContainer` to all registered `DomaStore` instances.
+Marker interface for type-safe messages delivered from `DomaContainer` to all registered `DomaStore` instances.
 
 ```kotlin
 sealed class MyBroadcast : DomaBroadcast {
@@ -311,7 +310,7 @@ sealed class MyBroadcast : DomaBroadcast {
 
 ## Example Application
 
-See the [`demo`](demo/) module for a complete counter application demonstrating Store, StoreContainer, and Broadcast in action.
+See the [`demo`](demo/) module for a complete counter application demonstrating Store, Container, and Broadcast in action.
 
 Run the demo:
 

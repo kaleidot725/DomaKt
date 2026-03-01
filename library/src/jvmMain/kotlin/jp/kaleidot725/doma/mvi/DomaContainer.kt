@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.UUID
 
-public abstract class DomaStoreContainer<Broadcast : DomaBroadcast>(
+public abstract class DomaContainer<Broadcast : DomaBroadcast>(
     private val stores: List<DomaStore<*, *, *, Broadcast>>,
 ) {
     private val containerKey: MutableStateFlow<String> = MutableStateFlow(UUID.randomUUID().toString())

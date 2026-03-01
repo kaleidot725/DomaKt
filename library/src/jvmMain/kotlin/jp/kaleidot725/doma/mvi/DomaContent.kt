@@ -12,14 +12,14 @@ import androidx.compose.runtime.key
 internal val LocalDomaContainerKey = compositionLocalOf { "" }
 
 @Composable
-public fun <Broadcast : DomaBroadcast> DomaContainer(
-    storeContainer: DomaStoreContainer<Broadcast>,
+public fun <Broadcast : DomaBroadcast> DomaApp(
+    container: DomaContainer<Broadcast>,
     content: @Composable ((onRefresh: () -> Unit, onBroadcast: (Broadcast) -> Unit) -> Unit) = { _, _ -> },
 ) {
-    val containerKey by storeContainer.key.collectAsState()
+    val containerKey by container.key.collectAsState()
 
     CompositionLocalProvider(LocalDomaContainerKey provides containerKey) {
-        content(storeContainer::refresh, storeContainer::broadcast)
+        content(container::refresh, container::broadcast)
     }
 }
 

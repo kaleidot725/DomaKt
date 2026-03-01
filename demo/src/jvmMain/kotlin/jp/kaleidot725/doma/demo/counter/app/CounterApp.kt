@@ -14,14 +14,14 @@ import androidx.compose.ui.unit.dp
 import jp.kaleidot725.doma.demo.counter.app.content.CounterOperatorContent
 import jp.kaleidot725.doma.demo.counter.app.content.CounterOperatorStore
 import jp.kaleidot725.doma.demo.counter.app.state.CounterAppBroadcast
-import jp.kaleidot725.doma.mvi.DomaContainer
+import jp.kaleidot725.doma.mvi.DomaApp
 
 @Composable
 fun CounterApp(
-    storeContainer: CounterStoreContainer,
+    container: CounterContainer,
     store: CounterOperatorStore,
 ) {
-    DomaContainer(storeContainer = storeContainer) { onRefresh, onBroadcast ->
+    DomaApp(container = container) { onRefresh, onBroadcast ->
         Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Row(
                 modifier = Modifier.align(Alignment.TopEnd).padding(16.dp),
