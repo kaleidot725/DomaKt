@@ -32,6 +32,7 @@ public fun <State : PulseState, Action : PulseAction, Event : PulseEvent, Broadc
     val containerKey = LocalPulseContainerKey.current
     val state by store.state.collectAsState()
     val onAction = store::onAction
+    LaunchedEffect(store) { store.onSetup() }
     LaunchedEffect(store) { store.event.collect { onEvent(it) } }
     DisposableEffect(store) {
         onDispose { store.cancel() }
