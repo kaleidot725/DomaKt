@@ -72,8 +72,8 @@ Observes a `PulseStore` and provides state and an action dispatcher to the conte
 
 - `DisposableEffect(store)` starts `onSetup()` for the first active observer
 - `LaunchedEffect(store)` collects `event`
-- The Store scope is cancelled after the last active observer leaves the composition
-- Re-entering composition starts `onSetup()` again while preserving Store state
+- The Store scope is cancelled after the last active observer leaves the composition, unless `store.retain()` is active
+- Re-entering composition starts `onSetup()` again only when no retention kept the Store active
 - When inside `PulseApp`, the composable is wrapped in `key(containerKey)` and re-creates on `refresh()`
 
 ### Example

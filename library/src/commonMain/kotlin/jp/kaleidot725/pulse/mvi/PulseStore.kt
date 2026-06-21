@@ -57,6 +57,11 @@ public abstract class PulseStore<
         coroutineScope = createCoroutineScope(coroutineDispatcher)
     }
 
+    public fun retain(): PulseStoreRetention {
+        attach()
+        return PulseStoreRetention(onRelease = ::detach)
+    }
+
     internal fun attach() {
         attachmentCount += 1
         if (attachmentCount == 1) onSetup()
@@ -83,5 +88,17 @@ public abstract class PulseStore<
     private companion object {
         private fun createCoroutineScope(coroutineDispatcher: CoroutineDispatcher): CoroutineScope =
             CoroutineScope(SupervisorJob() + coroutineDispatcher)
+    }
+}
+
+public class PulseStoreRetention internal constructor(
+    private val onRelease: () -> Unit,
+) {
+    private var isReleased: Boolean = false
+
+    public fun release() {
+        if (isReleased) return
+        isReleased = true
+        onRelease()
     }
 }

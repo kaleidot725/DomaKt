@@ -277,7 +277,7 @@ Base class for managing UI state within a specific screen component.
 | `currentState: UiState` | Snapshot of the current UI state |
 | `event: Flow<Event>` | Stream of one-time side effects |
 | `coroutineScope` | CoroutineScope tied to the Store's lifecycle |
-| `onSetup()` | Called for the first active `PulseContent`; called again after all observers leave and one re-enters |
+| `onSetup()` | Called when the Store first becomes active; called again only after all observers and retentions are released |
 | `onAction(uiAction)` | Called when a user action is dispatched |
 | `onReceive(broadcast)` | Called when the Container broadcasts a message |
 | `unicast(unicast)` | Emits a child-to-parent message |
@@ -314,7 +314,7 @@ PulseApp(container = myContainer) { onRefresh, onBroadcast ->
 
 Observes a `PulseStore` and provides state and action dispatcher to the content block. Automatically cancels the Store's coroutine scope when removed from composition.
 
-`PulseContent` owns the Store setup lifecycle. The first active `PulseContent` calls `onSetup()`, and the Store scope is cancelled only after the last active `PulseContent` leaves composition. This avoids duplicate setup when one Store is observed by multiple composables, while allowing setup to restart after mobile navigation returns to a screen. Store state is preserved between these transitions.
+`PulseContent` owns the default Store setup lifecycle. The first active `PulseContent` calls `onSetup()`, and the Store scope is cancelled only after the last active `PulseContent` leaves composition. For Navigation 3, use `store.retain()` when a route enters the user-owned back stack and release the returned handle when that route is removed. This keeps setup active while another destination temporarily covers the route, without losing Store state.
 
 ```kotlin
 PulseContent(
@@ -348,13 +348,27 @@ sealed interface MyUnicast : PulseUnicast {
 
 ## Example Application
 
-See the [`demo`](demo/) module for a complete counter application demonstrating Store, Container, Broadcast, and Unicast in action.
+See the [`demo`](demo/) module for an Android, iOS, and Desktop Compose Multiplatform application using Navigation 3. It shows Store setup, back-stack retention, state preservation, broadcast, and unicast behavior on screen.
 
-Run the demo:
+Run the Desktop demo:
 
 ```bash
 ./gradlew :demo:run
 ```
+
+Build the Android app and iOS simulator framework:
+
+```bash
+./gradlew :demo:assembleDebug
+./gradlew :demo:linkDebugFrameworkIosSimulatorArm64
+```
+
+The demo verifies this Navigation 3 lifecycle:
+
+1. Opening Counter adds its route to the back stack and runs `onSetup()` once.
+2. Opening Lifecycle Details keeps Counter in the stack, so setup remains active and is not repeated on return.
+3. Removing Counter from the stack releases its Store retention and stops the setup scope.
+4. Re-adding Counter runs `onSetup()` again while preserving its count state.
 
 ## Building
 

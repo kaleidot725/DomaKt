@@ -75,7 +75,7 @@ A `CoroutineScope` backed by `SupervisorJob` and the dispatcher passed to the co
 open fun onSetup()
 ```
 
-Called when the first `PulseContent` observing this Store enters composition. The scope is cancelled after the last observer leaves, and `onSetup()` runs again when a new observer enters. Override it to start data-collection coroutines. Store state is preserved while no observer is active.
+Called when the Store first gains an active `PulseContent` observer or retention. The scope is cancelled after all observers and retentions are released, and `onSetup()` runs again the next time it becomes active. Override it to start data-collection coroutines. Store state is preserved while inactive.
 
 ---
 
@@ -139,7 +139,17 @@ Emits a child-to-parent message. The parent `PulseContainer` collects the Store'
 fun cancel()
 ```
 
-Cancels the current `coroutineScope` and prepares the Store for reuse. Called automatically after the last `PulseContent` observer leaves composition. When an observer later re-enters, `onSetup()` runs with a new scope and the preserved state.
+Cancels the current `coroutineScope` and prepares the Store for reuse. Called automatically after the last `PulseContent` observer and explicit retention are released. The next activation runs `onSetup()` with a new scope and the preserved state.
+
+---
+
+### `retain()`
+
+```kotlin
+fun retain(): PulseStoreRetention
+```
+
+Keeps the Store setup active independently of active `PulseContent` observers. This is useful with user-owned navigation back stacks: retain the Store when its route enters the stack and call `release()` when that route is removed. Temporary destination changes then do not repeat `onSetup()`.
 
 ## Example
 

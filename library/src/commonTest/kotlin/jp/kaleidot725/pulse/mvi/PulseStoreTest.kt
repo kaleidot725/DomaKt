@@ -54,6 +54,26 @@ class PulseStoreTest {
         assertEquals(TestState(value = 42), store.currentState)
         store.detach()
     }
+
+    @Test
+    fun retentionKeepsSetupActiveWhileContentDetaches() {
+        val store = TestStore()
+        val retention = store.retain()
+        val setupJob = requireNotNull(store.setupJob)
+
+        store.attach()
+        store.detach()
+
+        assertEquals(1, store.setupCount)
+        assertFalse(setupJob.isCancelled)
+
+        store.attach()
+        store.detach()
+
+        assertEquals(1, store.setupCount)
+        retention.release()
+        assertTrue(setupJob.isCancelled)
+    }
 }
 
 private data class TestState(

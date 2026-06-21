@@ -33,7 +33,7 @@ override fun onSetup() {
 ```
 
 ::: tip
-The Store scope is cancelled after the last active `PulseContent` leaves composition. `onSetup()` runs again when a new observer enters, while Store state is preserved. A view `refresh()` does not detach the Store or repeat setup.
+The Store scope is cancelled after the last active `PulseContent` leaves composition unless a `store.retain()` handle is active. For Navigation 3, retain when the route enters the back stack and release only when the route is removed. Covering the route or refreshing its subtree then does not repeat setup.
 :::
 
 ### `onAction(uiAction)`

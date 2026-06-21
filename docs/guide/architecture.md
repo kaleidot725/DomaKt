@@ -97,10 +97,12 @@ PulseContent disappears
         │
         └──▶ Store detached
                   │
-                  └──▶ Last active observer cancels + recreates coroutineScope
-                                (Store state is preserved for reuse)
+                  └──▶ Last observer and retention released
+                                │
+                                └──▶ cancel + recreate coroutineScope
+                                           (Store state is preserved for reuse)
 ```
 
 ::: tip
-`onSetup()` runs once for the first active `PulseContent`. It runs again after all observers leave composition and a new observer enters, such as when returning to a mobile screen. `refresh()` alone does not restart it.
+`onSetup()` runs when the Store first becomes active. With Navigation 3, keep a `store.retain()` handle for as long as its route remains in the user-owned back stack. Showing another destination and returning will not restart setup; removing and later re-adding the route will. `refresh()` alone also does not restart it.
 :::
