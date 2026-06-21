@@ -1,5 +1,6 @@
 package jp.kaleidot725.pulse.mvi
 
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -8,15 +9,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.util.UUID
 
 public abstract class PulseContainer<Broadcast : PulseBroadcast, Unicast : PulseUnicast>(
     private val stores: List<PulseStore<*, *, *, Broadcast, Unicast>>,
+    coroutineDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
-    private val coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main + Dispatchers.IO)
+    private val coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + coroutineDispatcher)
 
-    private val containerKey: MutableStateFlow<String> = MutableStateFlow(UUID.randomUUID().toString())
-    internal val key: StateFlow<String> = containerKey.asStateFlow()
+    private val containerKey: MutableStateFlow<Long> = MutableStateFlow(0L)
+    internal val key: StateFlow<Long> = containerKey.asStateFlow()
 
     init {
         stores.forEach { store ->
@@ -27,7 +28,7 @@ public abstract class PulseContainer<Broadcast : PulseBroadcast, Unicast : Pulse
     }
 
     public fun refresh() {
-        containerKey.value = UUID.randomUUID().toString()
+        containerKey.value += 1
     }
 
     public fun broadcast(broadcast: Broadcast) {

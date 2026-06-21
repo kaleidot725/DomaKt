@@ -3,8 +3,8 @@ layout: home
 
 hero:
   name: PulseMVI
-  text: MVI for Compose Desktop
-  tagline: A lightweight, coroutine-based MVI library designed for multi-Composable Compose Desktop layouts.
+  text: MVI for Compose Multiplatform
+  tagline: A lightweight, coroutine-based MVI library for Android, iOS, and Desktop.
   actions:
     - theme: brand
       text: Get Started

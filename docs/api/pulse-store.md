@@ -9,6 +9,7 @@ abstract class PulseStore<
     Unicast : PulseUnicast,
 >(
     initialUiState: UiState,
+    coroutineDispatcher: CoroutineDispatcher = Dispatchers.Default,
 )
 ```
 
@@ -24,7 +25,7 @@ Use `unicast()` when the Store needs to send messages up to its parent Container
 val state: StateFlow<UiState>
 ```
 
-The current UI state as a cold `StateFlow`. Calling `onSetup()` is triggered the first time this flow is collected.
+The current UI state as a hot, read-only `StateFlow`. Collecting it does not change the Store lifecycle.
 
 ---
 
@@ -64,7 +65,7 @@ A hot stream of child-to-parent unicasts emitted via `unicast()`.
 val coroutineScope: CoroutineScope
 ```
 
-A `CoroutineScope` backed by `SupervisorJob + Dispatchers.Main + Dispatchers.IO`. Cancelled and recreated on `cancel()`.
+A `CoroutineScope` backed by `SupervisorJob` and the dispatcher passed to the constructor. The dispatcher defaults to `Dispatchers.Default`; pass `Dispatchers.Main` or a test dispatcher when required. The owned scope is cancelled and recreated on `cancel()`.
 
 ## Methods
 
@@ -74,7 +75,7 @@ A `CoroutineScope` backed by `SupervisorJob + Dispatchers.Main + Dispatchers.IO`
 open fun onSetup()
 ```
 
-Called once when `state` is first subscribed to (and again after each `cancel()`). Override to start data-collection coroutines.
+Called when the first `PulseContent` observing this Store enters composition. The scope is cancelled after the last observer leaves, and `onSetup()` runs again when a new observer enters. Override it to start data-collection coroutines. Store state is preserved while no observer is active.
 
 ---
 
@@ -138,7 +139,7 @@ Emits a child-to-parent message. The parent `PulseContainer` collects the Store'
 fun cancel()
 ```
 
-Cancels the current `coroutineScope` and prepares the Store for reuse. Called automatically by `PulseContent` when it leaves the composition. After `cancel()`, the Store is ready to be re-subscribed (e.g., after a `refresh()`).
+Cancels the current `coroutineScope` and prepares the Store for reuse. Called automatically after the last `PulseContent` observer leaves composition. When an observer later re-enters, `onSetup()` runs with a new scope and the preserved state.
 
 ## Example
 

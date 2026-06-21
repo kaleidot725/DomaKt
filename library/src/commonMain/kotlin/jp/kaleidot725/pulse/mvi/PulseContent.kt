@@ -9,7 +9,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 
-internal val LocalPulseContainerKey = compositionLocalOf { "" }
+internal val LocalPulseContainerKey = compositionLocalOf { 0L }
 
 @Composable
 public fun <Broadcast : PulseBroadcast, Unicast : PulseUnicast> PulseApp(
@@ -38,10 +38,10 @@ public fun <
     val containerKey = LocalPulseContainerKey.current
     val state by store.state.collectAsState()
     val onAction = store::onAction
-    LaunchedEffect(store) { store.onSetup() }
     LaunchedEffect(store) { store.event.collect { onEvent(it) } }
     DisposableEffect(store) {
-        onDispose { store.cancel() }
+        store.attach()
+        onDispose { store.detach() }
     }
 
     key(containerKey) {

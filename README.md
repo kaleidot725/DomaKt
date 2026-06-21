@@ -5,8 +5,8 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![](https://jitpack.io/v/kaleidot725/PulseMVI.svg)](https://jitpack.io/#kaleidot725/PulseMVI)
 
-A lightweight MVI library for **Compose Desktop**.
-Designed for Desktop's multi-Composable layouts, PulseMVI adds **Broadcast** to notify all Stores simultaneously, **Unicast** to send child Store messages up to the Container, and **View Refresh** to reconstruct the view tree on demand.
+A lightweight MVI library for **Compose Multiplatform** on Android, iOS, and Desktop.
+PulseMVI adds **Broadcast** to notify all Stores simultaneously, **Unicast** to send child Store messages up to the Container, and **View Refresh** to reconstruct the view tree on demand.
 
 ![demo](docs/demo.png)
 
@@ -25,6 +25,7 @@ Designed for Desktop's multi-Composable layouts, PulseMVI adds **Broadcast** to 
 - Java 17 or higher
 - Kotlin 2.0 or higher
 - Compose Multiplatform project
+- Android API 21 or higher, iOS, or JVM Desktop
 
 ## Installation
 
@@ -40,7 +41,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.kaleidot725:PulseMVI:Tag")
+    implementation("com.github.kaleidot725:pulsemvi:Tag")
 }
 ```
 
@@ -52,7 +53,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.kaleidot725:PulseMVI:Tag'
+    implementation 'com.github.kaleidot725:pulsemvi:Tag'
 }
 ```
 
@@ -68,7 +69,7 @@ dependencies {
 
 <dependency>
     <groupId>com.github.kaleidot725</groupId>
-    <artifactId>PulseMVI</artifactId>
+    <artifactId>pulsemvi</artifactId>
     <version>Tag</version>
 </dependency>
 ```
@@ -138,6 +139,8 @@ sealed interface CounterUnicast : PulseUnicast {
 ### 2. Create a Store
 
 `PulseStore` manages its own UI state and handles user actions. Override `onSetup` to initialize subscriptions, `onAction` to handle user intents, and `onReceive` to react to broadcasts.
+
+Both `PulseStore` and `PulseContainer` accept an optional `coroutineDispatcher` constructor argument. It defaults to `Dispatchers.Default`; mobile apps can pass `Dispatchers.Main`, and tests can pass a test dispatcher.
 
 ```kotlin
 class CounterStore(
@@ -274,7 +277,7 @@ Base class for managing UI state within a specific screen component.
 | `currentState: UiState` | Snapshot of the current UI state |
 | `event: Flow<Event>` | Stream of one-time side effects |
 | `coroutineScope` | CoroutineScope tied to the Store's lifecycle |
-| `onSetup()` | Called when the Store is first subscribed to |
+| `onSetup()` | Called for the first active `PulseContent`; called again after all observers leave and one re-enters |
 | `onAction(uiAction)` | Called when a user action is dispatched |
 | `onReceive(broadcast)` | Called when the Container broadcasts a message |
 | `unicast(unicast)` | Emits a child-to-parent message |
@@ -310,6 +313,8 @@ PulseApp(container = myContainer) { onRefresh, onBroadcast ->
 #### PulseContent
 
 Observes a `PulseStore` and provides state and action dispatcher to the content block. Automatically cancels the Store's coroutine scope when removed from composition.
+
+`PulseContent` owns the Store setup lifecycle. The first active `PulseContent` calls `onSetup()`, and the Store scope is cancelled only after the last active `PulseContent` leaves composition. This avoids duplicate setup when one Store is observed by multiple composables, while allowing setup to restart after mobile navigation returns to a screen. Store state is preserved between these transitions.
 
 ```kotlin
 PulseContent(

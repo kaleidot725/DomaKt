@@ -1,6 +1,6 @@
 # Architecture
 
-PulseMVI follows the MVI (Model-View-Intent) pattern and adds three Desktop-specific primitives: **Broadcast**, **Unicast**, and **View Refresh**.
+PulseMVI follows the MVI (Model-View-Intent) pattern and adds three coordination primitives: **Broadcast**, **Unicast**, and **View Refresh**.
 
 ## Data Flow
 
@@ -63,11 +63,9 @@ Container.refresh()
         │
         └──▶ PulseApp detects new key
                   │
-                  └──▶ PulseContent re-created (via `key()`)
+                  └──▶ PulseContent's rendered subtree re-created (via `key()`)
                             │
-                            └──▶ Store.cancel() then Store re-subscribes
-                                      │
-                                      └──▶ onSetup() called again
+                            └──▶ Store remains attached; onSetup() is not repeated
 ```
 
 ## Component Responsibilities
@@ -89,18 +87,20 @@ Container.refresh()
 ```
 PulseContent appears
         │
-        └──▶ Store.state subscribed  ──▶  onSetup() called
-                                               │
-                                        coroutineScope active
+        └──▶ Store attached
+                  │
+                  └──▶ First active observer calls onSetup()
+                                │
+                                └──▶ coroutineScope active
 
 PulseContent disappears
         │
-        └──▶ Store.cancel() called
+        └──▶ Store detached
                   │
-                  └──▶ coroutineScope cancelled + recreated
-                            (Store is ready to be reused)
+                  └──▶ Last active observer cancels + recreates coroutineScope
+                                (Store state is preserved for reuse)
 ```
 
 ::: tip
-`onSetup()` is called every time the Store is first subscribed to — including after a `refresh()`. Use it to start your data-collection coroutines.
+`onSetup()` runs once for the first active `PulseContent`. It runs again after all observers leave composition and a new observer enters, such as when returning to a mobile screen. `refresh()` alone does not restart it.
 :::

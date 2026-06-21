@@ -3,10 +3,13 @@
 ```kotlin
 abstract class PulseContainer<Broadcast : PulseBroadcast, Unicast : PulseUnicast>(
     stores: List<PulseStore<*, *, *, Broadcast, Unicast>>,
+    coroutineDispatcher: CoroutineDispatcher = Dispatchers.Default,
 )
 ```
 
 Coordinates multiple `PulseStore` instances. Provides broadcast delivery, child unicast handling, and view refresh.
+
+The internal unicast collector uses `Dispatchers.Default` unless another dispatcher is passed to the constructor.
 
 ## Methods
 
