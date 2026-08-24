@@ -8,18 +8,12 @@ import jp.kaleidot725.pulse.demo.counter.app.content.CounterOperatorStore
 @Composable
 fun CounterApp(
     store: CounterOperatorStore,
-    onShowLifecycleDetails: () -> Unit,
-    onCloseCounter: () -> Unit,
-    onRefresh: () -> Unit,
-    onBroadcast: () -> Unit,
+    onShowCounterDetails: (Int) -> Unit,
 ) {
-    DemoPage(title = "Counter destination") {
+    DemoPage(title = "Counter") {
         CounterOperatorContent(
             store = store,
-            onShowLifecycleDetails = onShowLifecycleDetails,
-            onCloseCounter = onCloseCounter,
-            onRefresh = onRefresh,
-            onBroadcast = onBroadcast,
+            onShowCounterDetails = onShowCounterDetails,
         )
     }
 }

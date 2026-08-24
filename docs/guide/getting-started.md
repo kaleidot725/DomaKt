@@ -94,12 +94,11 @@ Create the Store and Container once at the top level:
 
 ```kotlin
 fun main() = application {
-    val repository = remember { CounterRepository() }
-    val store = remember { CounterStore(repository) }
-    val container = remember { CounterContainer(stores = listOf(store)) }
-
     Window(onCloseRequest = ::exitApplication, title = "Counter") {
         MaterialTheme {
+            val store = rememberPulseStore { CounterStore(CounterRepository()) }
+            val container = rememberPulseContainer { CounterContainer(stores = listOf(store)) }
+
             CounterApp(container = container, store = store)
         }
     }

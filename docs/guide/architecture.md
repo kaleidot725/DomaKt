@@ -104,5 +104,5 @@ PulseContent disappears
 ```
 
 ::: tip
-`onSetup()` runs when the Store first becomes active. With Navigation 3, keep a `store.retain()` handle for as long as its route remains in the user-owned back stack. Showing another destination and returning will not restart setup; removing and later re-adding the route will. `refresh()` alone also does not restart it.
+`onSetup()` runs when the Store first becomes active. A Store created with `rememberPulseStore` stays active for as long as its `ViewModelStoreOwner` lives, so a configuration change never repeats setup. With Navigation 3, keep a `store.retain()` handle for as long as its route remains in the user-owned back stack. Showing another destination and returning will not restart setup; removing and later re-adding the route will. `refresh()` alone also does not restart it.
 :::

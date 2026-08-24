@@ -205,17 +205,20 @@ Instantiate stores in the entry point, then use `PulseApp` for layout and `Pulse
 
 ```kotlin
 fun main() = application {
-    val repository = remember { CounterRepository() }
-    val store = remember { CounterStore(repository) }
-    val container = remember { CounterContainer(stores = listOf(store)) }
-
     Window(onCloseRequest = ::exitApplication, title = "Counter") {
         MaterialTheme {
+            val store = rememberPulseStore { CounterStore(CounterRepository()) }
+            val container = rememberPulseContainer { CounterContainer(stores = listOf(store)) }
+
             CounterApp(container = container, store = store)
         }
     }
 }
 ```
+
+On Android the same composables go inside `ComponentActivity.setContent { }`. `rememberPulseStore`
+picks up the Activity's `ViewModelStoreOwner`, so rotation keeps the Store, its state, and its
+running `onSetup()` work.
 
 **App composable** — wrap with `PulseApp` and expose refresh/broadcast controls:
 
@@ -297,6 +300,48 @@ Base class for coordinating multiple Stores.
 
 ### Composable Helpers
 
+#### rememberPulseStore / rememberPulseContainer
+
+Creates a Store or a Container that survives configuration changes. Both are owned by a `ViewModel`
+scoped to the current `ViewModelStoreOwner`, so an Android configuration change (rotation, theme
+switch, ...) rebuilds the composition without rebuilding them: state is preserved and `onSetup()` is
+not repeated. The Store scope is cancelled, and `PulseContainer.close()` is called, only once the
+owner is cleared.
+
+```kotlin
+@Composable
+fun CounterScreen() {
+    val store = rememberPulseStore { CounterStore(CounterRepository()) }
+    val container = rememberPulseContainer { CounterContainer(stores = listOf(store)) }
+
+    PulseApp(container = container) { _, _ ->
+        PulseContent(store = store) { state, onAction ->
+            // Compose UI
+        }
+    }
+}
+```
+
+The key defaults to the class name. Pass an explicit `key` when the same type is used more than once
+under a single owner:
+
+```kotlin
+val left = rememberPulseStore(key = "left") { CounterStore(leftRepository) }
+val right = rememberPulseStore(key = "right") { CounterStore(rightRepository) }
+```
+
+On hosts that do not provide a `ViewModelStoreOwner`, a composition scoped fallback owner is used.
+Android (`ComponentActivity`), iOS (`ComposeUIViewController`), and Desktop (`Window`) all provide
+one, so the fallback only applies to bare test hosts.
+
+iOS and Desktop have no configuration change, so nothing rebuilds the composition behind your back
+there and the Store simply lives as long as its host: on iOS the owner is cleared when the
+`ComposeUIViewController` is destroyed. The same code works on all three platforms, so there is no
+platform specific entry point to write.
+
+> **Note**: `rememberPulseStore` does not restore state after process death. Use `rememberSaveable`
+> for anything that has to outlive the process.
+
 #### PulseApp
 
 Manages a `PulseContainer` and provides `onRefresh` and `onBroadcast` callbacks to the content block. `PulseContent` placed inside automatically responds to `refresh()`.
@@ -348,7 +393,9 @@ sealed interface MyUnicast : PulseUnicast {
 
 ## Example Application
 
-See the [`demo`](demo/) module for an Android, iOS, and Desktop Compose Multiplatform application using Navigation 3. It shows Store setup, back-stack retention, state preservation, broadcast, and unicast behavior on screen.
+See the [`demo`](demo/) module for an Android, iOS, and Desktop Compose Multiplatform application
+using Navigation 3, and [`iosApp`](iosApp/) for the Xcode project that hosts it on iOS. It shows
+Store setup, back-stack retention, state preservation, broadcast, and unicast behavior on screen.
 
 Run the Desktop demo:
 
@@ -356,19 +403,35 @@ Run the Desktop demo:
 ./gradlew :demo:run
 ```
 
-Build the Android app and iOS simulator framework:
+Run the Android demo:
 
 ```bash
-./gradlew :demo:assembleDebug
-./gradlew :demo:linkDebugFrameworkIosSimulatorArm64
+./gradlew :demo:installDebug
 ```
 
-The demo verifies this Navigation 3 lifecycle:
+Run the iOS demo by opening `iosApp/iosApp.xcodeproj` in Xcode and running the `iosApp` scheme on a
+simulator. The Xcode target builds the Kotlin framework itself through
+`:demo:embedAndSignAppleFrameworkForXcode`, so no separate Gradle step is needed. From the command
+line:
 
-1. Opening Counter adds its route to the back stack and runs `onSetup()` once.
-2. Opening Lifecycle Details keeps Counter in the stack, so setup remains active and is not repeated on return.
-3. Removing Counter from the stack releases its Store retention and stops the setup scope.
-4. Re-adding Counter runs `onSetup()` again while preserving its count state.
+```bash
+xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' test
+```
+
+That runs `iosAppUITests`, which drives the real app on a simulator: it rotates the device and
+asserts the counter value, the navigation position, and that `onSetup()` is not repeated.
+
+The demo shows this lifecycle:
+
+1. Opening Counter creates the Store through `rememberPulseStore` and runs `onSetup()` once. The
+   screen shows the call count.
+2. Opening Count details keeps the Store alive, so returning does not repeat setup.
+3. Rotating the device rebuilds the composition on Android, but not the Store: the count, the back
+   stack, and the setup counter all stay put. iOS has no configuration change, so nothing is
+   rebuilt there in the first place.
+4. The Store scope is cancelled, and the Container closed, only when the host's `ViewModelStore` is
+   cleared.
 
 ## Building
 

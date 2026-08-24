@@ -16,29 +16,11 @@ class CounterOperatorStore(
         initialUiState = CounterOperatorState(),
     ) {
     override fun onSetup() {
-        val setupNumber = currentState.setupCount + 1
-        update {
-            copy(
-                setupCount = setupNumber,
-                isSetupActive = true,
-                lastLifecycleEvent = "onSetup #$setupNumber started.",
-            )
-        }
+        update { copy(setupCount = setupCount + 1) }
         coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            try {
-                repository.count.collect { count ->
-                    update { copy(count = count) }
-                    if (count == 10) event(CounterOperatorEvent.ShowMessage("10 Count"))
-                }
-            } finally {
-                val stopNumber = currentState.stopCount + 1
-                update {
-                    copy(
-                        stopCount = stopNumber,
-                        isSetupActive = false,
-                        lastLifecycleEvent = "Setup scope #$setupNumber stopped after navigation.",
-                    )
-                }
+            repository.count.collect { count ->
+                update { copy(count = count) }
+                if (count == 10) event(CounterOperatorEvent.ShowMessage("10 Count"))
             }
         }
     }
@@ -56,30 +38,6 @@ class CounterOperatorStore(
 
                 CounterOperatorAction.Reset -> {
                     repository.reset()
-                    unicast(CounterAppUnicast.ResetRequested)
-                }
-            }
-        }
-    }
-
-    override fun onReceive(broadcast: CounterAppBroadcast) {
-        val broadcastNumber = currentState.broadcastCount + 1
-        when (broadcast) {
-            is CounterAppBroadcast.Refresh -> {
-                update {
-                    copy(
-                        broadcastCount = broadcastNumber,
-                        lastLifecycleEvent = "Broadcast #$broadcastNumber received.",
-                    )
-                }
-            }
-
-            is CounterAppBroadcast.ResetNotified -> {
-                update {
-                    copy(
-                        broadcastCount = broadcastNumber,
-                        lastLifecycleEvent = "Reset unicast reached the Container and was broadcast back.",
-                    )
                 }
             }
         }

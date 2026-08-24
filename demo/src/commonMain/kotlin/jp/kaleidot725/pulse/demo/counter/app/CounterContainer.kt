@@ -7,12 +7,4 @@ import jp.kaleidot725.pulse.mvi.PulseStore
 
 class CounterContainer(
     stores: List<PulseStore<*, *, *, CounterAppBroadcast, CounterAppUnicast>>,
-) : PulseContainer<CounterAppBroadcast, CounterAppUnicast>(stores = stores) {
-    override fun onReceived(unicast: CounterAppUnicast) {
-        when (unicast) {
-            CounterAppUnicast.ResetRequested -> {
-                broadcast(CounterAppBroadcast.ResetNotified)
-            }
-        }
-    }
-}
+) : PulseContainer<CounterAppBroadcast, CounterAppUnicast>(stores = stores)

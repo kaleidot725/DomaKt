@@ -18,40 +18,24 @@ class DemoNavigationTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun navigationRetainsSetupUntilRouteIsRemoved() {
+    fun counterDetailsShowsSelectedCountAndReturns() {
         composeRule.setContent { DemoApp() }
 
-        composeRule.onNodeWithTag("store-active").assertTextEquals("Store active: no")
-        composeRule.onNodeWithTag("setup-count").assertTextEquals("Setup runs: 0")
-
-        composeRule.onNodeWithTag("open-counter").performClick()
-        waitForTaggedText("store-active", "Store active: yes")
-        waitForTaggedText("setup-count", "Setup runs: 1")
+        composeRule.onNodeWithTag("counter-value").assertTextEquals("0")
 
         composeRule.onNodeWithText("+").performClick()
         waitForTaggedText("counter-value", "1")
 
-        composeRule.onNodeWithTag("open-lifecycle-details").performClick()
-        waitForTaggedText("store-active", "Store active: yes")
-        waitForTaggedText("stop-count", "Stop runs: 0")
-        composeRule.onNodeWithTag("setup-count").assertTextEquals("Setup runs: 1")
-        composeRule.onNodeWithTag("retained-count").assertTextEquals("Count retained: 1")
+        composeRule.onNodeWithTag("open-counter-details").performClick()
+        waitForTaggedText("counter-detail-value", "1")
 
         composeRule.onNodeWithTag("back-to-counter").performClick()
-        waitForTaggedText("store-active", "Store active: yes")
-        waitForTaggedText("setup-count", "Setup runs: 1")
-        composeRule.onNodeWithTag("counter-value").assertTextEquals("1")
+        waitForTaggedText("counter-value", "1")
 
-        composeRule.onNodeWithText("Refresh subtree").performClick()
-        composeRule.onNodeWithTag("setup-count").assertTextEquals("Setup runs: 1")
-
-        composeRule.onNodeWithTag("close-counter").performClick()
-        waitForTaggedText("store-active", "Store active: no")
-        waitForTaggedText("stop-count", "Stop runs: 1")
-
-        composeRule.onNodeWithTag("open-counter").performClick()
-        waitForTaggedText("setup-count", "Setup runs: 2")
-        composeRule.onNodeWithTag("counter-value").assertTextEquals("1")
+        composeRule.onNodeWithText("+").performClick()
+        waitForTaggedText("counter-value", "2")
+        composeRule.onNodeWithTag("open-counter-details").performClick()
+        waitForTaggedText("counter-detail-value", "2")
     }
 
     private fun waitForTaggedText(

@@ -7,7 +7,7 @@ fun main() =
     application {
         Window(
             onCloseRequest = ::exitApplication,
-            title = "PulseMVI - Navigation 3 Lifecycle Demo",
+            title = "PulseMVI - Counter Demo",
         ) {
             DemoApp()
         }

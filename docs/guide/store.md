@@ -33,6 +33,8 @@ override fun onSetup() {
 ```
 
 ::: tip
+Create the Store with `rememberPulseStore` so it survives Android configuration changes: it is owned by a `ViewModel`, which keeps a retention handle for the Store's whole lifetime, so rotation preserves state and does not repeat `onSetup()`.
+
 The Store scope is cancelled after the last active `PulseContent` leaves composition unless a `store.retain()` handle is active. For Navigation 3, retain when the route enters the back stack and release only when the route is removed. Covering the route or refreshing its subtree then does not repeat setup.
 :::
 

@@ -15,9 +15,9 @@ class AppContainer(
 Instantiate it at the same level as your Stores:
 
 ```kotlin
-val sidebarStore = remember { SidebarStore() }
-val contentStore = remember { ContentStore() }
-val container = remember {
+val sidebarStore = rememberPulseStore { SidebarStore() }
+val contentStore = rememberPulseStore { ContentStore() }
+val container = rememberPulseContainer {
     AppContainer(stores = listOf(sidebarStore, contentStore))
 }
 ```

@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,6 +34,16 @@ public abstract class PulseContainer<Broadcast : PulseBroadcast, Unicast : Pulse
 
     public fun broadcast(broadcast: Broadcast) {
         stores.forEach { it.onReceive(broadcast) }
+    }
+
+    /**
+     * Cancels the Container scope and stops collecting Unicast messages from the Stores.
+     *
+     * Call this when the Container is gone for good. [rememberPulseContainer] calls it for you when
+     * the owning [androidx.lifecycle.ViewModelStore] is cleared.
+     */
+    public fun close() {
+        coroutineScope.cancel()
     }
 
     public open fun onReceived(unicast: Unicast) {}

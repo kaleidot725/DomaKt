@@ -29,6 +29,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api("org.jetbrains.compose.runtime:runtime:1.10.1")
+                api("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.9.6")
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
             }
         }
@@ -36,6 +37,9 @@ kotlin {
             dependencies {
                 implementation(kotlin("test"))
             }
+        }
+        iosTest.dependencies {
+            implementation("org.jetbrains.compose.ui:ui-test:1.10.1")
         }
     }
 }

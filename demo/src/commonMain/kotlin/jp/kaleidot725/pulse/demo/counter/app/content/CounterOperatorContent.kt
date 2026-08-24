@@ -19,7 +19,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import jp.kaleidot725.pulse.demo.LifecycleStatus
 import jp.kaleidot725.pulse.demo.counter.app.content.state.CounterOperatorAction
 import jp.kaleidot725.pulse.demo.counter.app.content.state.CounterOperatorEvent
 import jp.kaleidot725.pulse.mvi.PulseContent
@@ -28,10 +27,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun CounterOperatorContent(
     store: CounterOperatorStore,
-    onShowLifecycleDetails: () -> Unit,
-    onCloseCounter: () -> Unit,
-    onRefresh: () -> Unit,
-    onBroadcast: () -> Unit,
+    onShowCounterDetails: (Int) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -51,12 +47,16 @@ fun CounterOperatorContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            LifecycleStatus(state)
             Text(
                 text = state.count.toString(),
                 modifier = Modifier.testTag("counter-value"),
                 fontSize = 72.sp,
                 fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = "onSetup() calls: ${state.setupCount}",
+                modifier = Modifier.testTag("setup-count"),
+                style = MaterialTheme.typography.bodyMedium,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(onClick = { onAction(CounterOperatorAction.Decrement) }) {
@@ -70,29 +70,11 @@ fun CounterOperatorContent(
                 }
             }
             Button(
-                onClick = onShowLifecycleDetails,
-                modifier = Modifier.fillMaxWidth().testTag("open-lifecycle-details"),
+                onClick = { onShowCounterDetails(state.count) },
+                modifier = Modifier.fillMaxWidth().testTag("open-counter-details"),
             ) {
-                Text("Open lifecycle details")
+                Text("Show details")
             }
-            OutlinedButton(
-                onClick = onCloseCounter,
-                modifier = Modifier.fillMaxWidth().testTag("close-counter"),
-            ) {
-                Text("Remove counter from stack")
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedButton(onClick = onRefresh) {
-                    Text("Refresh subtree")
-                }
-                OutlinedButton(onClick = onBroadcast) {
-                    Text("Send broadcast")
-                }
-            }
-            Text(
-                text = "Refresh and covered destinations do not rerun onSetup while Counter remains in the back stack.",
-                style = MaterialTheme.typography.bodySmall,
-            )
         }
     }
 

@@ -1,5 +1,7 @@
 package jp.kaleidot725.pulse.mvi
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -24,6 +26,20 @@ class PulseContainerTest {
         container.refresh()
 
         assertEquals(2L, container.key.value)
+    }
+
+    @Test
+    fun closeStopsUnicastCollection() {
+        val store = BroadcastStore()
+        val container = TestContainer(listOf(store), coroutineDispatcher = Dispatchers.Unconfined)
+
+        store.unicast(ContainerUnicast)
+        assertEquals(1, container.receivedCount)
+
+        container.close()
+        store.unicast(ContainerUnicast)
+
+        assertEquals(1, container.receivedCount)
     }
 }
 
@@ -52,4 +68,11 @@ private class BroadcastStore :
 
 private class TestContainer(
     stores: List<PulseStore<*, *, *, ContainerBroadcast, ContainerUnicast>>,
-) : PulseContainer<ContainerBroadcast, ContainerUnicast>(stores)
+    coroutineDispatcher: CoroutineDispatcher = Dispatchers.Default,
+) : PulseContainer<ContainerBroadcast, ContainerUnicast>(stores, coroutineDispatcher) {
+    var receivedCount: Int = 0
+
+    override fun onReceived(unicast: ContainerUnicast) {
+        receivedCount += 1
+    }
+}
