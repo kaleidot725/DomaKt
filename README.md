@@ -5,8 +5,8 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![](https://jitpack.io/v/kaleidot725/PulseMVI.svg)](https://jitpack.io/#kaleidot725/PulseMVI)
 
-A lightweight MVI library for **Compose Desktop**.
-Designed for Desktop's multi-Composable layouts, PulseMVI adds **Broadcast** to notify all Stores simultaneously, **Unicast** to send child Store messages up to the Container, and **View Refresh** to reconstruct the view tree on demand.
+A lightweight MVI library for **Compose Multiplatform** on Android, iOS, and Desktop.
+PulseMVI adds **Broadcast** to notify all Stores simultaneously, **Unicast** to send child Store messages up to the Container, and **View Refresh** to reconstruct the view tree on demand.
 
 ![demo](docs/demo.png)
 
@@ -25,6 +25,7 @@ Designed for Desktop's multi-Composable layouts, PulseMVI adds **Broadcast** to 
 - Java 17 or higher
 - Kotlin 2.0 or higher
 - Compose Multiplatform project
+- Android API 21 or higher, iOS, or JVM Desktop
 
 ## Installation
 
@@ -40,7 +41,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.kaleidot725:PulseMVI:Tag")
+    implementation("com.github.kaleidot725:pulsemvi:Tag")
 }
 ```
 
@@ -52,7 +53,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.kaleidot725:PulseMVI:Tag'
+    implementation 'com.github.kaleidot725:pulsemvi:Tag'
 }
 ```
 
@@ -68,7 +69,7 @@ dependencies {
 
 <dependency>
     <groupId>com.github.kaleidot725</groupId>
-    <artifactId>PulseMVI</artifactId>
+    <artifactId>pulsemvi</artifactId>
     <version>Tag</version>
 </dependency>
 ```
@@ -139,6 +140,8 @@ sealed interface CounterUnicast : PulseUnicast {
 
 `PulseStore` manages its own UI state and handles user actions. Override `onSetup` to initialize subscriptions, `onAction` to handle user intents, and `onReceive` to react to broadcasts.
 
+Both `PulseStore` and `PulseContainer` accept an optional `coroutineDispatcher` constructor argument. It defaults to `Dispatchers.Default`; mobile apps can pass `Dispatchers.Main`, and tests can pass a test dispatcher.
+
 ```kotlin
 class CounterStore(
     private val repository: CounterRepository,
@@ -202,17 +205,20 @@ Instantiate stores in the entry point, then use `PulseApp` for layout and `Pulse
 
 ```kotlin
 fun main() = application {
-    val repository = remember { CounterRepository() }
-    val store = remember { CounterStore(repository) }
-    val container = remember { CounterContainer(stores = listOf(store)) }
-
     Window(onCloseRequest = ::exitApplication, title = "Counter") {
         MaterialTheme {
+            val store = rememberPulseStore { CounterStore(CounterRepository()) }
+            val container = rememberPulseContainer { CounterContainer(stores = listOf(store)) }
+
             CounterApp(container = container, store = store)
         }
     }
 }
 ```
+
+On Android the same composables go inside `ComponentActivity.setContent { }`. `rememberPulseStore`
+picks up the Activity's `ViewModelStoreOwner`, so rotation keeps the Store, its state, and its
+running `onSetup()` work.
 
 **App composable** — wrap with `PulseApp` and expose refresh/broadcast controls:
 
@@ -274,7 +280,7 @@ Base class for managing UI state within a specific screen component.
 | `currentState: UiState` | Snapshot of the current UI state |
 | `event: Flow<Event>` | Stream of one-time side effects |
 | `coroutineScope` | CoroutineScope tied to the Store's lifecycle |
-| `onSetup()` | Called when the Store is first subscribed to |
+| `onSetup()` | Called when the Store first becomes active; called again only after all observers and retentions are released |
 | `onAction(uiAction)` | Called when a user action is dispatched |
 | `onReceive(broadcast)` | Called when the Container broadcasts a message |
 | `unicast(unicast)` | Emits a child-to-parent message |
@@ -294,6 +300,48 @@ Base class for coordinating multiple Stores.
 
 ### Composable Helpers
 
+#### rememberPulseStore / rememberPulseContainer
+
+Creates a Store or a Container that survives configuration changes. Both are owned by a `ViewModel`
+scoped to the current `ViewModelStoreOwner`, so an Android configuration change (rotation, theme
+switch, ...) rebuilds the composition without rebuilding them: state is preserved and `onSetup()` is
+not repeated. The Store scope is cancelled, and `PulseContainer.close()` is called, only once the
+owner is cleared.
+
+```kotlin
+@Composable
+fun CounterScreen() {
+    val store = rememberPulseStore { CounterStore(CounterRepository()) }
+    val container = rememberPulseContainer { CounterContainer(stores = listOf(store)) }
+
+    PulseApp(container = container) { _, _ ->
+        PulseContent(store = store) { state, onAction ->
+            // Compose UI
+        }
+    }
+}
+```
+
+The key defaults to the class name. Pass an explicit `key` when the same type is used more than once
+under a single owner:
+
+```kotlin
+val left = rememberPulseStore(key = "left") { CounterStore(leftRepository) }
+val right = rememberPulseStore(key = "right") { CounterStore(rightRepository) }
+```
+
+On hosts that do not provide a `ViewModelStoreOwner`, a composition scoped fallback owner is used.
+Android (`ComponentActivity`), iOS (`ComposeUIViewController`), and Desktop (`Window`) all provide
+one, so the fallback only applies to bare test hosts.
+
+iOS and Desktop have no configuration change, so nothing rebuilds the composition behind your back
+there and the Store simply lives as long as its host: on iOS the owner is cleared when the
+`ComposeUIViewController` is destroyed. The same code works on all three platforms, so there is no
+platform specific entry point to write.
+
+> **Note**: `rememberPulseStore` does not restore state after process death. Use `rememberSaveable`
+> for anything that has to outlive the process.
+
 #### PulseApp
 
 Manages a `PulseContainer` and provides `onRefresh` and `onBroadcast` callbacks to the content block. `PulseContent` placed inside automatically responds to `refresh()`.
@@ -309,7 +357,9 @@ PulseApp(container = myContainer) { onRefresh, onBroadcast ->
 
 #### PulseContent
 
-Observes a `PulseStore` and provides state and action dispatcher to the content block. Automatically cancels the Store's coroutine scope when removed from composition.
+Observes a `PulseStore` and provides state and action dispatcher to the content block.
+
+`PulseContent` only observes — it never starts or cancels the Store. The setup lifecycle belongs to `rememberPulseStore`: `onSetup()` runs once when the Store is created, and the scope is cancelled when the owning `ViewModelStoreOwner` is cleared. Leaving composition, including another Navigation 3 destination covering the route, therefore never repeats setup or loses Store state.
 
 ```kotlin
 PulseContent(
@@ -343,13 +393,45 @@ sealed interface MyUnicast : PulseUnicast {
 
 ## Example Application
 
-See the [`demo`](demo/) module for a complete counter application demonstrating Store, Container, Broadcast, and Unicast in action.
+See the [`demo`](demo/) module for an Android, iOS, and Desktop Compose Multiplatform application
+using Navigation 3, and [`iosApp`](iosApp/) for the Xcode project that hosts it on iOS. It shows
+Store setup, back-stack retention, state preservation, broadcast, and unicast behavior on screen.
 
-Run the demo:
+Run the Desktop demo:
 
 ```bash
 ./gradlew :demo:run
 ```
+
+Run the Android demo:
+
+```bash
+./gradlew :demo:installDebug
+```
+
+Run the iOS demo by opening `iosApp/iosApp.xcodeproj` in Xcode and running the `iosApp` scheme on a
+simulator. The Xcode target builds the Kotlin framework itself through
+`:demo:embedAndSignAppleFrameworkForXcode`, so no separate Gradle step is needed. From the command
+line:
+
+```bash
+xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' test
+```
+
+That runs `iosAppUITests`, which drives the real app on a simulator: it rotates the device and
+asserts the counter value, the navigation position, and that `onSetup()` is not repeated.
+
+The demo shows this lifecycle:
+
+1. Opening Counter creates the Store through `rememberPulseStore` and runs `onSetup()` once. The
+   screen shows the call count.
+2. Opening Count details keeps the Store alive, so returning does not repeat setup.
+3. Rotating the device rebuilds the composition on Android, but not the Store: the count, the back
+   stack, and the setup counter all stay put. iOS has no configuration change, so nothing is
+   rebuilt there in the first place.
+4. The Store scope is cancelled, and the Container closed, only when the host's `ViewModelStore` is
+   cleared.
 
 ## Building
 

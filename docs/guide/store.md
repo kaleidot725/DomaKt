@@ -20,7 +20,7 @@ class MyStore : PulseStore<MyState, MyAction, MyEvent, MyBroadcast, MyUnicast>(
 
 ### `onSetup()`
 
-Called once when the Store's `state` is first collected. Use this to start long-running coroutines such as repository flows:
+Called when the first `PulseContent` observing the Store enters composition. Use this to start long-running coroutines such as repository flows:
 
 ```kotlin
 override fun onSetup() {
@@ -32,8 +32,10 @@ override fun onSetup() {
 }
 ```
 
-::: warning
-`onSetup()` is also called after `cancel()` (i.e., after a view refresh). Coroutines launched here are automatically cancelled when `cancel()` is called.
+::: tip
+Always create the Store with `rememberPulseStore`. It owns the setup lifecycle: `onSetup()` runs once when the Store is created, and the scope is cancelled when the owning `ViewModelStoreOwner` is cleared. Rotation preserves state and does not repeat `onSetup()`.
+
+Because the lifecycle follows the owner rather than the composition, covering the route with another Navigation 3 destination, or refreshing its subtree, never repeats setup.
 :::
 
 ### `onAction(uiAction)`

@@ -1,5 +1,71 @@
 # Composables
 
+## rememberPulseStore
+
+```kotlin
+@Composable
+inline fun <reified Store : PulseStore<*, *, *, *, *>> rememberPulseStore(
+    key: String? = null,
+    noinline factory: () -> Store,
+): Store
+```
+
+Creates a Store that survives configuration changes. The Store is owned by a `ViewModel` scoped to
+the current `ViewModelStoreOwner`, so an Android configuration change rebuilds the composition
+without rebuilding the Store.
+
+### Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `key` | `String?` | Unique key within the owner. Defaults to the Store class name |
+| `factory` | `() -> Store` | Called once per owner to create the Store |
+
+### Lifecycle behavior
+
+- The Store is created on first composition and reused for every later composition under the same owner
+- A retention handle is held for the Store's whole lifetime, so `onSetup()` is not repeated when the composition is rebuilt
+- The retention is released, and the Store scope cancelled, when the owner's `ViewModelStore` is cleared
+- State is kept in memory only; it is not restored after process death
+- On iOS and Desktop there is no configuration change, so the Store simply lives as long as its host: on iOS the owner is cleared when the `ComposeUIViewController` is destroyed
+
+### Example
+
+```kotlin
+val store = rememberPulseStore { CounterStore(CounterRepository()) }
+
+// Two instances of the same Store type need distinct keys
+val left = rememberPulseStore(key = "left") { CounterStore(leftRepository) }
+val right = rememberPulseStore(key = "right") { CounterStore(rightRepository) }
+```
+
+## rememberPulseContainer
+
+```kotlin
+@Composable
+inline fun <reified Container : PulseContainer<*, *>> rememberPulseContainer(
+    key: String? = null,
+    noinline factory: () -> Container,
+): Container
+```
+
+Creates a Container that survives configuration changes, keeping its Unicast subscriptions alive.
+`PulseContainer.close()` is called when the owner's `ViewModelStore` is cleared.
+
+### Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `key` | `String?` | Unique key within the owner. Defaults to the Container class name |
+| `factory` | `() -> Container` | Called once per owner to create the Container |
+
+### Example
+
+```kotlin
+val store = rememberPulseStore { CounterStore(CounterRepository()) }
+val container = rememberPulseContainer { CounterContainer(stores = listOf(store)) }
+```
+
 ## PulseApp
 
 ```kotlin
@@ -70,8 +136,10 @@ Observes a `PulseStore` and provides state and an action dispatcher to the conte
 
 ### Lifecycle behavior
 
-- `LaunchedEffect(store)` starts `onSetup()` and begins collecting `event`
-- `DisposableEffect(store)` calls `store.cancel()` when the composable leaves the composition
+- `PulseContent` only observes: it never starts or cancels the Store lifecycle
+- `LaunchedEffect(store)` collects `event`
+- `onSetup()` runs once when `rememberPulseStore` creates the Store, and the scope is cancelled when the owning `ViewModelStoreOwner` is cleared
+- Leaving and re-entering composition — a navigation destination covering the route, for example — never repeats `onSetup()`
 - When inside `PulseApp`, the composable is wrapped in `key(containerKey)` and re-creates on `refresh()`
 
 ### Example

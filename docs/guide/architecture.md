@@ -1,6 +1,6 @@
 # Architecture
 
-PulseMVI follows the MVI (Model-View-Intent) pattern and adds three Desktop-specific primitives: **Broadcast**, **Unicast**, and **View Refresh**.
+PulseMVI follows the MVI (Model-View-Intent) pattern and adds three coordination primitives: **Broadcast**, **Unicast**, and **View Refresh**.
 
 ## Data Flow
 
@@ -63,11 +63,9 @@ Container.refresh()
         │
         └──▶ PulseApp detects new key
                   │
-                  └──▶ PulseContent re-created (via `key()`)
+                  └──▶ PulseContent's rendered subtree re-created (via `key()`)
                             │
-                            └──▶ Store.cancel() then Store re-subscribes
-                                      │
-                                      └──▶ onSetup() called again
+                            └──▶ Store is untouched; onSetup() is not repeated
 ```
 
 ## Component Responsibilities
@@ -87,20 +85,22 @@ Container.refresh()
 ## Lifecycle
 
 ```
-PulseContent appears
+rememberPulseStore creates the Store
         │
-        └──▶ Store.state subscribed  ──▶  onSetup() called
-                                               │
-                                        coroutineScope active
-
-PulseContent disappears
-        │
-        └──▶ Store.cancel() called
+        └──▶ Owned by a ViewModel scoped to the ViewModelStoreOwner
                   │
-                  └──▶ coroutineScope cancelled + recreated
-                            (Store is ready to be reused)
+                  └──▶ onSetup() called once
+                                │
+                                └──▶ coroutineScope active
+
+ViewModelStoreOwner cleared
+        │
+        └──▶ ViewModel.onCleared()
+                  │
+                  └──▶ coroutineScope cancelled
+                                (Store is discarded with its owner)
 ```
 
 ::: tip
-`onSetup()` is called every time the Store is first subscribed to — including after a `refresh()`. Use it to start your data-collection coroutines.
+`onSetup()` runs once when `rememberPulseStore` creates the Store, and the Store stays active for as long as its `ViewModelStoreOwner` lives. A configuration change never repeats setup. With Navigation 3, showing another destination and returning does not restart it either, because the lifecycle follows the owner rather than the composition. `refresh()` alone also does not restart it.
 :::
