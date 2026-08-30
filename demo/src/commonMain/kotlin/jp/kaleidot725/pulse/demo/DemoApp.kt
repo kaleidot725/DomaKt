@@ -65,7 +65,7 @@ private val DemoRouteBackStackSaver: Saver<SnapshotStateList<DemoRoute>, Any> =
     )
 
 /**
- * Hosts the back stack only. Each destination builds its own `PulseApp` with its own Container and
+ * Hosts the back stack only. Each destination builds its own `PulseHost` with its own Container and
  * Stores, and [rememberViewModelStoreNavEntryDecorator] scopes them to the entry: a Store exists
  * while its route is on the back stack and is cancelled when the route is popped.
  */

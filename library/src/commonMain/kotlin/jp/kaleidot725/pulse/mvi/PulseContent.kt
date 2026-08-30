@@ -10,8 +10,15 @@ import androidx.compose.runtime.key
 
 internal val LocalPulseContainerKey = compositionLocalOf { 0L }
 
+/**
+ * Scopes a [PulseContainer] to this subtree.
+ *
+ * Emits no UI of its own: it publishes the Container key that [PulseContent] re-creates its content
+ * on, and hands [content] the Container's `refresh` and `broadcast`. Every destination that owns a
+ * Container gets its own [PulseHost], so an app can contain several of them.
+ */
 @Composable
-public fun <Broadcast : PulseBroadcast, Unicast : PulseUnicast> PulseApp(
+public fun <Broadcast : PulseBroadcast, Unicast : PulseUnicast> PulseHost(
     container: PulseContainer<Broadcast, Unicast>,
     content: @Composable ((onRefresh: () -> Unit, onBroadcast: (Broadcast) -> Unit) -> Unit) = { _, _ -> },
 ) {
