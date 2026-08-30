@@ -61,7 +61,7 @@ StoreA.unicast(MyUnicast.SaveRequested)
 ```
 Container.refresh()
         │
-        └──▶ PulseApp detects new key
+        └──▶ PulseHost detects new key
                   │
                   └──▶ PulseContent's rendered subtree re-created (via `key()`)
                             │
@@ -79,7 +79,7 @@ Container.refresh()
 | `PulseUnicast` | Child-to-parent notification from Store |
 | `PulseStore` | Owns state; handles actions and broadcasts; can emit unicasts |
 | `PulseContainer` | Coordinates Stores; enables broadcast, unicast handling, and refresh |
-| `PulseApp` | Compose wrapper that propagates container key |
+| `PulseHost` | Compose wrapper that propagates container key |
 | `PulseContent` | Compose wrapper that observes a Store |
 
 ## Lifecycle

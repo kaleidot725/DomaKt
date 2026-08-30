@@ -199,7 +199,7 @@ class CounterContainer(
 
 ### 4. Connect to Compose UI
 
-Instantiate stores in the entry point, then use `PulseApp` for layout and `PulseContent` inside it to observe each Store. `PulseContent` automatically responds to `refresh()` when nested inside `PulseApp`.
+Instantiate stores in the entry point, then use `PulseHost` for layout and `PulseContent` inside it to observe each Store. `PulseContent` automatically responds to `refresh()` when nested inside `PulseHost`.
 
 **Entry point** — create stores once and pass them down:
 
@@ -220,12 +220,12 @@ On Android the same composables go inside `ComponentActivity.setContent { }`. `r
 picks up the Activity's `ViewModelStoreOwner`, so rotation keeps the Store, its state, and its
 running `onSetup()` work.
 
-**App composable** — wrap with `PulseApp` and expose refresh/broadcast controls:
+**App composable** — wrap with `PulseHost` and expose refresh/broadcast controls:
 
 ```kotlin
 @Composable
 fun CounterApp(container: CounterContainer, store: CounterStore) {
-    PulseApp(container = container) { onRefresh, onBroadcast ->
+    PulseHost(container = container) { onRefresh, onBroadcast ->
         Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Row(modifier = Modifier.align(Alignment.TopEnd)) {
                 Button(onClick = { onRefresh() }) { Text("Refresh View") }
@@ -314,7 +314,7 @@ fun CounterScreen() {
     val store = rememberPulseStore { CounterStore(CounterRepository()) }
     val container = rememberPulseContainer { CounterContainer(stores = listOf(store)) }
 
-    PulseApp(container = container) { _, _ ->
+    PulseHost(container = container) { _, _ ->
         PulseContent(store = store) { state, onAction ->
             // Compose UI
         }
@@ -358,12 +358,12 @@ platform specific entry point to write.
 > **Note**: `rememberPulseStore` does not restore state after process death. Use `rememberSaveable`
 > for anything that has to outlive the process.
 
-#### PulseApp
+#### PulseHost
 
 Manages a `PulseContainer` and provides `onRefresh` and `onBroadcast` callbacks to the content block. `PulseContent` placed inside automatically responds to `refresh()`.
 
 ```kotlin
-PulseApp(container = myContainer) { onRefresh, onBroadcast ->
+PulseHost(container = myContainer) { onRefresh, onBroadcast ->
     // Compose UI
     PulseContent(store = myStore) { state, onAction ->
         // Compose UI

@@ -107,12 +107,12 @@ fun main() = application {
 
 ### App composable
 
-Wrap your layout with `PulseApp` to enable refresh and broadcast:
+Wrap your layout with `PulseHost` to enable refresh and broadcast:
 
 ```kotlin
 @Composable
 fun CounterApp(container: CounterContainer, store: CounterStore) {
-    PulseApp(container = container) { onRefresh, onBroadcast ->
+    PulseHost(container = container) { onRefresh, onBroadcast ->
         Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Row(modifier = Modifier.align(Alignment.TopEnd)) {
                 Button(onClick = { onRefresh() }) {

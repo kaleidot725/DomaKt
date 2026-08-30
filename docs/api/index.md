@@ -13,7 +13,7 @@ PulseMVI exposes a small, focused API surface. Everything you need is in the `jp
 
 | Composable | Description |
 |---|---|
-| [`PulseApp`](/api/composables#pulseapp) | Wraps a Container; enables refresh and broadcast callbacks |
+| [`PulseHost`](/api/composables#pulsehost) | Wraps a Container; enables refresh and broadcast callbacks |
 | [`PulseContent`](/api/composables#pulsecontent) | Observes a Store; provides state and action dispatcher |
 
 ## Marker Interfaces

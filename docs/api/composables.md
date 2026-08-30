@@ -107,11 +107,11 @@ val store = rememberPulseStore { CounterStore(CounterRepository()) }
 val container = rememberPulseContainer { CounterContainer(stores = listOf(store)) }
 ```
 
-## PulseApp
+## PulseHost
 
 ```kotlin
 @Composable
-fun <Broadcast : PulseBroadcast, Unicast : PulseUnicast> PulseApp(
+fun <Broadcast : PulseBroadcast, Unicast : PulseUnicast> PulseHost(
     container: PulseContainer<Broadcast, Unicast>,
     content: @Composable (
         onRefresh: () -> Unit,
@@ -120,7 +120,9 @@ fun <Broadcast : PulseBroadcast, Unicast : PulseUnicast> PulseApp(
 )
 ```
 
-Wraps a `PulseContainer` and provides `onRefresh` and `onBroadcast` callbacks to the content block. All `PulseContent` composables placed inside `PulseApp` automatically respond to `container.refresh()`.
+Scopes a `PulseContainer` to this subtree. It emits no UI of its own: it publishes the Container key that `PulseContent` re-creates its content on, and provides `onRefresh` and `onBroadcast` to the content block. All `PulseContent` composables placed inside respond to `container.refresh()`.
+
+An app can contain several of them. Each destination that owns a Container hosts its own, which is how the demo builds every screen.
 
 ### Parameters
 
@@ -132,7 +134,7 @@ Wraps a `PulseContainer` and provides `onRefresh` and `onBroadcast` callbacks to
 ### Example
 
 ```kotlin
-PulseApp(container = appContainer) { onRefresh, onBroadcast ->
+PulseHost(container = appContainer) { onRefresh, onBroadcast ->
     Column {
         Button(onClick = { onBroadcast(AppBroadcast.Sync) }) {
             Text("Sync All")
@@ -181,7 +183,7 @@ Observes a `PulseStore` and provides state and an action dispatcher to the conte
 - `LaunchedEffect(store)` collects `event`
 - `onSetup()` runs once when `rememberPulseStore` creates the Store, and the scope is cancelled when the owning `ViewModelStoreOwner` is cleared
 - Leaving and re-entering composition — a navigation destination covering the route, for example — never repeats `onSetup()`
-- When inside `PulseApp`, the composable is wrapped in `key(containerKey)` and re-creates on `refresh()`
+- When inside `PulseHost`, the composable is wrapped in `key(containerKey)` and re-creates on `refresh()`
 
 ### Example
 

@@ -34,5 +34,5 @@ features:
     details: Built on Kotlin Coroutines and StateFlow for efficient, non-blocking reactive state management.
   - icon: 🎨
     title: Compose Integration
-    details: Ready-to-use PulseApp and PulseContent composables with automatic lifecycle management.
+    details: Ready-to-use PulseHost and PulseContent composables with automatic lifecycle management.
 ---
