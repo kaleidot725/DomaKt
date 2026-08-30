@@ -78,6 +78,13 @@ dependencies {
     <artifactId>pulsemvi</artifactId>
     <version>Tag</version>
 </dependency>
+
+<!-- Optional: ViewModel owned Store lifetimes and Navigation 3 back stack scoping -->
+<dependency>
+    <groupId>com.github.kaleidot725</groupId>
+    <artifactId>pulsemvi-navigation3</artifactId>
+    <version>Tag</version>
+</dependency>
 ```
 
 > **Note**: Replace `Tag` with the desired version tag (e.g., `v1.0.0`) or a specific commit hash.
@@ -501,7 +508,7 @@ Run tests:
 Publish to local Maven:
 
 ```bash
-./gradlew :library:publishToMavenLocal
+./gradlew :library:publishToMavenLocal :navigation3:publishToMavenLocal
 ```
 
 ## License

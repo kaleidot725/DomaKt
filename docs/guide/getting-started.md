@@ -2,6 +2,17 @@
 
 This guide walks you through building a simple counter app with PulseMVI.
 
+It uses `rememberPulseStore` to own the Store, which comes from the `pulsemvi-navigation3` artifact.
+Add it alongside the core one, or see [Store](/guide/store) for driving the lifecycle yourself with
+the core artifact alone.
+
+```kotlin
+dependencies {
+    implementation("com.github.kaleidot725:pulsemvi:<version>")
+    implementation("com.github.kaleidot725:pulsemvi-navigation3:<version>")
+}
+```
+
 ## 1. Define State, Action, Event, Broadcast, and Unicast
 
 Start by defining the five types that describe your feature:
