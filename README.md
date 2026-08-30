@@ -330,9 +330,25 @@ val left = rememberPulseStore(key = "left") { CounterStore(leftRepository) }
 val right = rememberPulseStore(key = "right") { CounterStore(rightRepository) }
 ```
 
+Internally both read `LocalViewModelStoreOwner.current` and keep a `ViewModel` in that owner's
+`ViewModelStore`. **Whatever owner is in scope at the call site decides how long the Store lives**,
+so anything that changes that owner changes the lifetime:
+
+- Under the host owner, the Store lives as long as the screen
+- Under a Navigation 3 entry — add `rememberViewModelStoreNavEntryDecorator()` to `NavDisplay`'s
+  `entryDecorators` and create the Store inside the destination — it lives as long as the route stays
+  on the back stack, and is cancelled when the route is popped
+- Under an owner you provide with `CompositionLocalProvider(LocalViewModelStoreOwner provides ...)`,
+  it lives as long as you keep that owner
+
+Nothing removes a Store from its owner before the owner is cleared, so creating Stores under a long
+lived owner accumulates them. Scope them to a narrower owner when a screen creates Stores it will not
+need again.
+
 On hosts that do not provide a `ViewModelStoreOwner`, a composition scoped fallback owner is used.
 Android (`ComponentActivity`), iOS (`ComposeUIViewController`), and Desktop (`Window`) all provide
-one, so the fallback only applies to bare test hosts.
+one, so the fallback only applies to bare test hosts — and there a configuration change would lose
+the Store.
 
 iOS and Desktop have no configuration change, so nothing rebuilds the composition behind your back
 there and the Store simply lives as long as its host: on iOS the owner is cleared when the

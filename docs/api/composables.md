@@ -24,10 +24,36 @@ without rebuilding the Store.
 ### Lifecycle behavior
 
 - The Store is created on first composition and reused for every later composition under the same owner
-- A retention handle is held for the Store's whole lifetime, so `onSetup()` is not repeated when the composition is rebuilt
-- The retention is released, and the Store scope cancelled, when the owner's `ViewModelStore` is cleared
+- `onSetup()` runs once, when the Store is created, so rebuilding the composition does not repeat it
+- The Store scope is cancelled when the owner's `ViewModelStore` is cleared
 - State is kept in memory only; it is not restored after process death
 - On iOS and Desktop there is no configuration change, so the Store simply lives as long as its host: on iOS the owner is cleared when the `ComposeUIViewController` is destroyed
+
+### Owner resolution
+
+Internally this reads `LocalViewModelStoreOwner.current` and stores a `ViewModel` in that owner's
+`ViewModelStore`, keyed by `key`. Whatever owner is in scope at the call site therefore decides how
+long the Store lives, and anything that changes that owner changes the Store's lifetime.
+
+| Owner in scope | Store lives |
+|---|---|
+| The host (`ComponentActivity`, `ComposeUIViewController`, Desktop `Window`) | As long as the screen; survives configuration changes |
+| A Navigation 3 entry, via `rememberViewModelStoreNavEntryDecorator()` in `NavDisplay`'s `entryDecorators` | As long as the route stays on the back stack; cancelled when the route is popped |
+| One you provide with `CompositionLocalProvider(LocalViewModelStoreOwner provides ...)` | As long as you keep that owner |
+| None provided by the host | As long as the composition — a fallback owner is used, so configuration changes lose the Store |
+
+Two consequences worth planning for:
+
+- **`key` is unique per owner, not globally.** Two Stores of the same type under one owner collide,
+  and the default key is the class name. Give them explicit keys, or put them under different owners
+- **Nothing removes a Store from its owner before the owner is cleared.** Creating Stores under a
+  long lived owner accumulates them for the life of that owner. Scope them to a narrower owner when
+  a screen creates Stores it will not need again
+
+::: tip
+Tests can exercise both sides of this by providing their own owner: keep it across a composition
+rebuild to reproduce a configuration change, or clear it to reproduce the screen going away.
+:::
 
 ### Example
 
@@ -37,6 +63,21 @@ val store = rememberPulseStore { CounterStore(CounterRepository()) }
 // Two instances of the same Store type need distinct keys
 val left = rememberPulseStore(key = "left") { CounterStore(leftRepository) }
 val right = rememberPulseStore(key = "right") { CounterStore(rightRepository) }
+
+// Scoped to a Navigation 3 destination instead of the whole screen
+NavDisplay(
+    backStack = backStack,
+    entryDecorators = listOf(
+        rememberSaveableStateHolderNavEntryDecorator(),
+        rememberViewModelStoreNavEntryDecorator(),
+    ),
+    entryProvider = entryProvider {
+        entry<Route.Counter> {
+            val store = rememberPulseStore { CounterStore(CounterRepository()) }
+            // ...
+        }
+    },
+)
 ```
 
 ## rememberPulseContainer
