@@ -99,19 +99,19 @@ fun main() = application {
             val store = rememberPulseStore { CounterStore(CounterRepository()) }
             val container = rememberPulseContainer { CounterContainer(stores = listOf(store)) }
 
-            CounterApp(container = container, store = store)
+            CounterScreen(container = container, store = store)
         }
     }
 }
 ```
 
-### App composable
+### Screen composable
 
 Wrap your layout with `PulseHost` to enable refresh and broadcast:
 
 ```kotlin
 @Composable
-fun CounterApp(container: CounterContainer, store: CounterStore) {
+fun CounterScreen(container: CounterContainer, store: CounterStore) {
     PulseHost(container = container) { onRefresh, onBroadcast ->
         Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Row(modifier = Modifier.align(Alignment.TopEnd)) {

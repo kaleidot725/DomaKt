@@ -210,7 +210,7 @@ fun main() = application {
             val store = rememberPulseStore { CounterStore(CounterRepository()) }
             val container = rememberPulseContainer { CounterContainer(stores = listOf(store)) }
 
-            CounterApp(container = container, store = store)
+            CounterScreen(container = container, store = store)
         }
     }
 }
@@ -220,11 +220,11 @@ On Android the same composables go inside `ComponentActivity.setContent { }`. `r
 picks up the Activity's `ViewModelStoreOwner`, so rotation keeps the Store, its state, and its
 running `onSetup()` work.
 
-**App composable** — wrap with `PulseHost` and expose refresh/broadcast controls:
+**Screen composable** — wrap with `PulseHost` and expose refresh/broadcast controls:
 
 ```kotlin
 @Composable
-fun CounterApp(container: CounterContainer, store: CounterStore) {
+fun CounterScreen(container: CounterContainer, store: CounterStore) {
     PulseHost(container = container) { onRefresh, onBroadcast ->
         Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Row(modifier = Modifier.align(Alignment.TopEnd)) {
