@@ -25,8 +25,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
-import jp.kaleidot725.pulse.demo.counter.app.CounterScreen
-import jp.kaleidot725.pulse.demo.counter.detail.app.CounterDetailScreen
+import jp.kaleidot725.pulse.demo.counter.detail.screen.CounterDetailScreen
+import jp.kaleidot725.pulse.demo.counter.screen.CounterScreen
 import jp.kaleidot725.pulse.mvi.navigation3.rememberPulseNavEntryDecorators
 
 private sealed interface DemoRoute : NavKey {

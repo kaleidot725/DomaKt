@@ -1,10 +1,10 @@
-package jp.kaleidot725.pulse.demo.counter.app
+package jp.kaleidot725.pulse.demo.counter.screen
 
 import androidx.compose.runtime.Composable
 import jp.kaleidot725.pulse.demo.DemoPage
-import jp.kaleidot725.pulse.demo.counter.app.content.CounterOperatorContent
-import jp.kaleidot725.pulse.demo.counter.app.content.CounterOperatorStore
 import jp.kaleidot725.pulse.demo.counter.repository.CounterRepository
+import jp.kaleidot725.pulse.demo.counter.screen.content.CounterOperatorContent
+import jp.kaleidot725.pulse.demo.counter.screen.content.CounterOperatorStore
 import jp.kaleidot725.pulse.mvi.PulseHost
 import jp.kaleidot725.pulse.mvi.navigation3.rememberPulseContainer
 import jp.kaleidot725.pulse.mvi.navigation3.rememberPulseStore

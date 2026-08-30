@@ -1,18 +1,18 @@
-package jp.kaleidot725.pulse.demo.counter.app.content
+package jp.kaleidot725.pulse.demo.counter.screen.content
 
-import jp.kaleidot725.pulse.demo.counter.app.content.state.CounterOperatorAction
-import jp.kaleidot725.pulse.demo.counter.app.content.state.CounterOperatorEvent
-import jp.kaleidot725.pulse.demo.counter.app.content.state.CounterOperatorState
-import jp.kaleidot725.pulse.demo.counter.app.state.CounterAppBroadcast
-import jp.kaleidot725.pulse.demo.counter.app.state.CounterAppUnicast
 import jp.kaleidot725.pulse.demo.counter.repository.CounterRepository
+import jp.kaleidot725.pulse.demo.counter.screen.content.state.CounterOperatorAction
+import jp.kaleidot725.pulse.demo.counter.screen.content.state.CounterOperatorEvent
+import jp.kaleidot725.pulse.demo.counter.screen.content.state.CounterOperatorState
+import jp.kaleidot725.pulse.demo.counter.screen.state.CounterBroadcast
+import jp.kaleidot725.pulse.demo.counter.screen.state.CounterUnicast
 import jp.kaleidot725.pulse.mvi.PulseStore
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 
 class CounterOperatorStore(
     private val repository: CounterRepository,
-) : PulseStore<CounterOperatorState, CounterOperatorAction, CounterOperatorEvent, CounterAppBroadcast, CounterAppUnicast>(
+) : PulseStore<CounterOperatorState, CounterOperatorAction, CounterOperatorEvent, CounterBroadcast, CounterUnicast>(
         initialUiState = CounterOperatorState(),
     ) {
     override fun onSetup() {

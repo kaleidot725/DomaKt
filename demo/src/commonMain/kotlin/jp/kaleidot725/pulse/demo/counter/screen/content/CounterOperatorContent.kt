@@ -1,4 +1,4 @@
-package jp.kaleidot725.pulse.demo.counter.app.content
+package jp.kaleidot725.pulse.demo.counter.screen.content
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,8 +19,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import jp.kaleidot725.pulse.demo.counter.app.content.state.CounterOperatorAction
-import jp.kaleidot725.pulse.demo.counter.app.content.state.CounterOperatorEvent
+import jp.kaleidot725.pulse.demo.counter.screen.content.state.CounterOperatorAction
+import jp.kaleidot725.pulse.demo.counter.screen.content.state.CounterOperatorEvent
 import jp.kaleidot725.pulse.mvi.PulseContent
 import kotlinx.coroutines.launch
 
