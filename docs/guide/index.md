@@ -42,8 +42,14 @@ Then add the dependency:
 // build.gradle.kts
 dependencies {
     implementation("com.github.kaleidot725:pulsemvi:<version>")
+
+    // Optional: ViewModel owned Store lifetimes and Navigation 3 back stack scoping
+    implementation("com.github.kaleidot725:pulsemvi-navigation3:<version>")
 }
 ```
+
+`pulsemvi` alone leaves the Store lifetime to you — see [Store](/guide/store). Add
+`pulsemvi-navigation3` for `rememberPulseStore`, which hands that lifetime to a `ViewModel`.
 
 Replace `<version>` with the latest tag from [GitHub Releases](https://github.com/kaleidot725/PulseMVI/releases).
 

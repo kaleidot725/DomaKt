@@ -104,5 +104,5 @@ ViewModelStoreOwner cleared
 ::: tip
 `onSetup()` runs once when `rememberPulseStore` creates the Store, and the Store stays active for as long as its `ViewModelStoreOwner` lives. A configuration change never repeats setup, and neither does `refresh()`.
 
-Which owner that is decides the Store's lifetime. Creating the Store under the host owner keeps it alive for the whole screen. Creating it inside a Navigation 3 destination, with `rememberViewModelStoreNavEntryDecorator()` among the `NavDisplay` decorators, scopes it to that back stack entry: covering the route with another destination keeps the Store, popping the route cancels it. The demo builds every destination that way.
+Which owner that is decides the Store's lifetime. Creating the Store under the host owner keeps it alive for the whole screen. Creating it inside a Navigation 3 destination, with `rememberPulseNavEntryDecorators()` as the `NavDisplay` decorators, scopes it to that back stack entry: covering the route with another destination keeps the Store, popping the route cancels it. The demo builds every destination that way.
 :::

@@ -33,11 +33,11 @@ override fun onSetup() {
 ```
 
 ::: tip
-Always create the Store with `rememberPulseStore`. It owns the setup lifecycle: `onSetup()` runs once when the Store is created, and the scope is cancelled when the owning `ViewModelStoreOwner` is cleared. Rotation preserves state and does not repeat `onSetup()`.
+With `pulsemvi-navigation3`, create the Store with `rememberPulseStore`. It owns the setup lifecycle: `onSetup()` runs once when the Store is created, and the scope is cancelled when the owning `ViewModelStoreOwner` is cleared. Rotation preserves state and does not repeat `onSetup()`.
 
 Because the lifecycle follows the owner rather than the composition, covering the route with another Navigation 3 destination, or refreshing its subtree, never repeats setup.
 
-To tie a Store to a single destination instead of the whole screen, add `rememberViewModelStoreNavEntryDecorator()` to `NavDisplay`'s `entryDecorators` and call `rememberPulseStore` inside the destination. The entry then owns the Store, and popping the route cancels it.
+To tie a Store to a single destination instead of the whole screen, pass `rememberPulseNavEntryDecorators()` as `NavDisplay`'s `entryDecorators` and call `rememberPulseStore` inside the destination. The entry then owns the Store, and popping the route cancels it.
 :::
 
 ### `onAction(uiAction)`
@@ -95,3 +95,36 @@ override fun onAction(uiAction: MyAction) {
     coroutineScope.launch { /* ... */ }
 }
 ```
+
+## Driving the lifecycle yourself
+
+`rememberPulseStore` lives in `pulsemvi-navigation3`. With the core artifact alone, nothing calls
+`onSetup()` for you — `PulseContent` only observes. Create the Store however you like and drive it
+from the composition:
+
+```kotlin
+val store = remember { CounterStore(repository) }
+DisposableEffect(store) {
+    store.onSetup()
+    onDispose { store.cancel() }
+}
+
+PulseContent(store = store) { state, onAction ->
+    // Compose UI
+}
+```
+
+A Container you own needs only the teardown, since it has no setup step:
+
+```kotlin
+val container = remember { CounterContainer(stores = listOf(store)) }
+DisposableEffect(container) {
+    onDispose { container.close() }
+}
+```
+
+::: warning
+The Store then lives exactly as long as this composition. Leaving and re-entering it repeats
+`onSetup()`, and an Android configuration change starts over, losing the Store's state. Add
+`pulsemvi-navigation3` when that matters.
+:::

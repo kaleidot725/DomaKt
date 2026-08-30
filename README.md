@@ -42,6 +42,9 @@ repositories {
 
 dependencies {
     implementation("com.github.kaleidot725:pulsemvi:Tag")
+
+    // Optional: ViewModel owned Store lifetimes and Navigation 3 back stack scoping
+    implementation("com.github.kaleidot725:pulsemvi-navigation3:Tag")
 }
 ```
 
@@ -54,6 +57,9 @@ repositories {
 
 dependencies {
     implementation 'com.github.kaleidot725:pulsemvi:Tag'
+
+    // Optional: ViewModel owned Store lifetimes and Navigation 3 back stack scoping
+    implementation 'com.github.kaleidot725:pulsemvi-navigation3:Tag'
 }
 ```
 
@@ -75,6 +81,33 @@ dependencies {
 ```
 
 > **Note**: Replace `Tag` with the desired version tag (e.g., `v1.0.0`) or a specific commit hash.
+
+### Artifacts
+
+| Artifact | Contents |
+|---|---|
+| `pulsemvi` | `PulseState`, `PulseAction`, `PulseEvent`, `PulseBroadcast`, `PulseUnicast`, `PulseStore`, `PulseContainer`, `PulseHost`, `PulseContent`. Depends on the Compose runtime and coroutines only |
+| `pulsemvi-navigation3` | `rememberPulseStore`, `rememberPulseContainer` and `rememberPulseNavEntryDecorators`. Adds `androidx.lifecycle` and Navigation 3 |
+
+The core artifact leaves the Store lifetime to you: call `onSetup()` when the Store becomes active
+and `cancel()` when it is done. In a composition that is one `DisposableEffect`:
+
+```kotlin
+val store = remember { CounterStore(repository) }
+DisposableEffect(store) {
+    store.onSetup()
+    onDispose { store.cancel() }
+}
+
+PulseContent(store = store) { state, onAction ->
+    // Compose UI
+}
+```
+
+The Store then lives exactly as long as this composition, so leaving and re-entering it repeats
+`onSetup()`, and an Android configuration change starts over. Add `pulsemvi-navigation3` when the
+Store should outlive the composition — its `rememberPulseStore` hands the lifetime to a `ViewModel`
+scoped to the host, or to a Navigation 3 back stack entry.
 
 ## Architecture
 
@@ -335,7 +368,7 @@ Internally both read `LocalViewModelStoreOwner.current` and keep a `ViewModel` i
 so anything that changes that owner changes the lifetime:
 
 - Under the host owner, the Store lives as long as the screen
-- Under a Navigation 3 entry — add `rememberViewModelStoreNavEntryDecorator()` to `NavDisplay`'s
+- Under a Navigation 3 entry — pass `rememberPulseNavEntryDecorators()` as `NavDisplay`'s
   `entryDecorators` and create the Store inside the destination — it lives as long as the route stays
   on the back stack, and is cancelled when the route is popped
 - Under an owner you provide with `CompositionLocalProvider(LocalViewModelStoreOwner provides ...)`,
@@ -377,7 +410,7 @@ Observes a `PulseStore` and provides state and action dispatcher to the content 
 
 `PulseContent` only observes — it never starts or cancels the Store. The setup lifecycle belongs to `rememberPulseStore`: `onSetup()` runs once when the Store is created, and the scope is cancelled when the owning `ViewModelStoreOwner` is cleared. Leaving composition, including another Navigation 3 destination covering the route, therefore never repeats setup or loses Store state.
 
-With `rememberViewModelStoreNavEntryDecorator()` in `NavDisplay`'s `entryDecorators`, each destination gets its own owner, so a Store created inside a destination lives exactly as long as its route stays on the back stack.
+With `rememberPulseNavEntryDecorators()` as `NavDisplay`'s `entryDecorators`, each destination gets its own owner, so a Store created inside a destination lives exactly as long as its route stays on the back stack.
 
 ```kotlin
 PulseContent(

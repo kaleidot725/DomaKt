@@ -2,6 +2,12 @@
 
 ## rememberPulseStore
 
+::: tip Artifact
+`rememberPulseStore`, `rememberPulseContainer` and `rememberPulseNavEntryDecorators` live in
+`pulsemvi-navigation3`, package `jp.kaleidot725.pulse.mvi.navigation3`. The core artifact leaves the
+Store lifetime to the caller — see [Store](/guide/store).
+:::
+
 ```kotlin
 @Composable
 inline fun <reified Store : PulseStore<*, *, *, *, *>> rememberPulseStore(
@@ -38,7 +44,7 @@ long the Store lives, and anything that changes that owner changes the Store's l
 | Owner in scope | Store lives |
 |---|---|
 | The host (`ComponentActivity`, `ComposeUIViewController`, Desktop `Window`) | As long as the screen; survives configuration changes |
-| A Navigation 3 entry, via `rememberViewModelStoreNavEntryDecorator()` in `NavDisplay`'s `entryDecorators` | As long as the route stays on the back stack; cancelled when the route is popped |
+| A Navigation 3 entry, via `rememberPulseNavEntryDecorators()` as `NavDisplay`'s `entryDecorators` | As long as the route stays on the back stack; cancelled when the route is popped |
 | One you provide with `CompositionLocalProvider(LocalViewModelStoreOwner provides ...)` | As long as you keep that owner |
 | None provided by the host | As long as the composition — a fallback owner is used, so configuration changes lose the Store |
 
@@ -67,10 +73,7 @@ val right = rememberPulseStore(key = "right") { CounterStore(rightRepository) }
 // Scoped to a Navigation 3 destination instead of the whole screen
 NavDisplay(
     backStack = backStack,
-    entryDecorators = listOf(
-        rememberSaveableStateHolderNavEntryDecorator(),
-        rememberViewModelStoreNavEntryDecorator(),
-    ),
+    entryDecorators = rememberPulseNavEntryDecorators(),
     entryProvider = entryProvider {
         entry<Route.Counter> {
             val store = rememberPulseStore { CounterStore(CounterRepository()) }
@@ -105,6 +108,33 @@ Creates a Container that survives configuration changes, keeping its Unicast sub
 ```kotlin
 val store = rememberPulseStore { CounterStore(CounterRepository()) }
 val container = rememberPulseContainer { CounterContainer(stores = listOf(store)) }
+```
+
+## rememberPulseNavEntryDecorators
+
+```kotlin
+@Composable
+fun <T : Any> rememberPulseNavEntryDecorators(): List<NavEntryDecorator<T>>
+```
+
+The `NavEntryDecorator` list `NavDisplay` needs for Stores to be scoped to a back stack entry: the
+saveable state holder decorator plus the ViewModel one.
+
+`NavDisplay` defaults `entryDecorators` to the saveable state holder alone, so passing the ViewModel
+decorator on its own would silently drop saveable state. This returns both.
+
+```kotlin
+NavDisplay(
+    backStack = backStack,
+    entryDecorators = rememberPulseNavEntryDecorators(),
+    entryProvider = entryProvider {
+        entry<Route.Counter> {
+            // Scoped to this entry: cancelled when the route is popped
+            val store = rememberPulseStore { CounterStore(CounterRepository()) }
+            // ...
+        }
+    },
+)
 ```
 
 ## PulseHost
