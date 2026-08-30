@@ -13,4 +13,5 @@ plugins {
 rootProject.name = "PulseMVI"
 
 include(":library")
+include(":navigation3")
 include(":demo")

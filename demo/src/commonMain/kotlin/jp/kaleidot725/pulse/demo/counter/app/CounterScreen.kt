@@ -6,8 +6,8 @@ import jp.kaleidot725.pulse.demo.counter.app.content.CounterOperatorContent
 import jp.kaleidot725.pulse.demo.counter.app.content.CounterOperatorStore
 import jp.kaleidot725.pulse.demo.counter.repository.CounterRepository
 import jp.kaleidot725.pulse.mvi.PulseHost
-import jp.kaleidot725.pulse.mvi.rememberPulseContainer
-import jp.kaleidot725.pulse.mvi.rememberPulseStore
+import jp.kaleidot725.pulse.mvi.navigation3.rememberPulseContainer
+import jp.kaleidot725.pulse.mvi.navigation3.rememberPulseStore
 
 /**
  * Owns everything this destination needs: its Store, its Container and its [PulseHost] subtree.

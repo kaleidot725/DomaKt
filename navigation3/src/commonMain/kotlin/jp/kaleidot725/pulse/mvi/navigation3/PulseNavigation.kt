@@ -1,4 +1,4 @@
-package jp.kaleidot725.pulse.mvi
+package jp.kaleidot725.pulse.mvi.navigation3
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -9,7 +9,12 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.navigation3.runtime.NavEntryDecorator
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import jp.kaleidot725.pulse.mvi.PulseContainer
+import jp.kaleidot725.pulse.mvi.PulseStore
 
 /**
  * Creates a [PulseStore] that survives configuration changes.
@@ -125,3 +130,28 @@ internal class PulseContainerHolder(
 internal class PulseViewModelStoreOwner : ViewModelStoreOwner {
     override val viewModelStore: ViewModelStore = ViewModelStore()
 }
+
+/**
+ * The [NavEntryDecorator] list `NavDisplay` needs for PulseMVI Stores to be scoped to a back stack
+ * entry.
+ *
+ * `NavDisplay` defaults `entryDecorators` to the saveable state holder alone, so passing the
+ * ViewModel decorator on its own would drop saveable state. This keeps both:
+ *
+ * ```kotlin
+ * NavDisplay(
+ *     backStack = backStack,
+ *     entryDecorators = rememberPulseNavEntryDecorators(),
+ *     entryProvider = entryProvider { ... },
+ * )
+ * ```
+ *
+ * A Store created with [rememberPulseStore] inside a destination then lives exactly as long as its
+ * route stays on the back stack.
+ */
+@Composable
+public fun <T : Any> rememberPulseNavEntryDecorators(): List<NavEntryDecorator<T>> =
+    listOf(
+        rememberSaveableStateHolderNavEntryDecorator(),
+        rememberViewModelStoreNavEntryDecorator(),
+    )

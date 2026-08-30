@@ -22,13 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import jp.kaleidot725.pulse.demo.counter.app.CounterScreen
 import jp.kaleidot725.pulse.demo.counter.detail.app.CounterDetailScreen
+import jp.kaleidot725.pulse.mvi.navigation3.rememberPulseNavEntryDecorators
 
 private sealed interface DemoRoute : NavKey {
     data object Counter : DemoRoute
@@ -66,7 +65,7 @@ private val DemoRouteBackStackSaver: Saver<SnapshotStateList<DemoRoute>, Any> =
 
 /**
  * Hosts the back stack only. Each destination builds its own `PulseHost` with its own Container and
- * Stores, and [rememberViewModelStoreNavEntryDecorator] scopes them to the entry: a Store exists
+ * Stores, and [rememberPulseNavEntryDecorators] scopes them to the entry: a Store exists
  * while its route is on the back stack and is cancelled when the route is popped.
  */
 @Composable
@@ -83,11 +82,7 @@ fun DemoApp() {
         NavDisplay(
             backStack = backStack,
             onBack = popLast,
-            entryDecorators =
-                listOf(
-                    rememberSaveableStateHolderNavEntryDecorator(),
-                    rememberViewModelStoreNavEntryDecorator(),
-                ),
+            entryDecorators = rememberPulseNavEntryDecorators(),
             entryProvider =
                 entryProvider {
                     entry<DemoRoute.Counter> {

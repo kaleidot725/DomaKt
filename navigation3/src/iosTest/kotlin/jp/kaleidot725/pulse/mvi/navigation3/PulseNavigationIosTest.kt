@@ -1,4 +1,4 @@
-package jp.kaleidot725.pulse.mvi
+package jp.kaleidot725.pulse.mvi.navigation3
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.key
@@ -8,6 +8,12 @@ import androidx.compose.ui.test.runComposeUiTest
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import jp.kaleidot725.pulse.mvi.PulseAction
+import jp.kaleidot725.pulse.mvi.PulseBroadcast
+import jp.kaleidot725.pulse.mvi.PulseEvent
+import jp.kaleidot725.pulse.mvi.PulseState
+import jp.kaleidot725.pulse.mvi.PulseStore
+import jp.kaleidot725.pulse.mvi.PulseUnicast
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -21,7 +27,7 @@ import kotlin.test.assertSame
  * it outlives a composition rebuild.
  */
 @OptIn(ExperimentalTestApi::class)
-class PulseRetentionIosTest {
+class PulseNavigationIosTest {
     @Test
     fun hostProvidesViewModelStoreOwner() =
         runComposeUiTest {

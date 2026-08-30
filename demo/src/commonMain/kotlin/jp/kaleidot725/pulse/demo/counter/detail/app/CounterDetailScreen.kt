@@ -6,8 +6,8 @@ import jp.kaleidot725.pulse.demo.counter.app.CounterContainer
 import jp.kaleidot725.pulse.demo.counter.detail.app.content.CounterDetailContent
 import jp.kaleidot725.pulse.demo.counter.detail.app.content.CounterDetailStore
 import jp.kaleidot725.pulse.mvi.PulseHost
-import jp.kaleidot725.pulse.mvi.rememberPulseContainer
-import jp.kaleidot725.pulse.mvi.rememberPulseStore
+import jp.kaleidot725.pulse.mvi.navigation3.rememberPulseContainer
+import jp.kaleidot725.pulse.mvi.navigation3.rememberPulseStore
 
 /**
  * The second destination, built the same way as the first one: its own Store, Container and

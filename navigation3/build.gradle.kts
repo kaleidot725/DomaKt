@@ -20,7 +20,7 @@ kotlin {
     androidTarget {
         publishLibraryVariants("release")
     }
-    iosX64()
+    // navigation3-ui does not publish iosX64, so this module skips the Intel simulator target.
     iosArm64()
     iosSimulatorArm64()
     jvmToolchain(17)
@@ -28,8 +28,10 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api("org.jetbrains.compose.runtime:runtime:1.10.1")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+                api(project(":library"))
+                api("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+                api("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3:2.10.0")
+                api("org.jetbrains.androidx.navigation3:navigation3-ui:1.1.1")
             }
         }
         val commonTest by getting {
@@ -37,12 +39,15 @@ kotlin {
                 implementation(kotlin("test"))
             }
         }
+        iosTest.dependencies {
+            implementation("org.jetbrains.compose.ui:ui-test:1.10.1")
+        }
     }
 }
 
 android {
-    namespace = "jp.kaleidot725.pulse.mvi"
-    compileSdk = 35
+    namespace = "jp.kaleidot725.pulse.mvi.navigation3"
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 21
@@ -51,11 +56,11 @@ android {
 
 publishing {
     publications.withType<MavenPublication>().configureEach {
-        artifactId = artifactId.replace(project.name, "pulsemvi")
+        artifactId = artifactId.replace(project.name, "pulsemvi-navigation3")
 
         pom {
-            name.set("PulseMVI")
-            description.set("A Kotlin MVI library for Compose Multiplatform")
+            name.set("PulseMVI Navigation 3")
+            description.set("Navigation 3 and ViewModel owned Store and Container lifetimes for PulseMVI")
             url.set("https://github.com/kaleidot725/PulseMVI")
 
             licenses {
@@ -77,6 +82,6 @@ publishing {
 
 afterEvaluate {
     publishing.publications.named<MavenPublication>("androidRelease") {
-        artifactId = "pulsemvi-android"
+        artifactId = "pulsemvi-navigation3-android"
     }
 }
