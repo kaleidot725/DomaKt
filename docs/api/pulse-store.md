@@ -45,7 +45,8 @@ Synchronous snapshot of the current UI state. Equivalent to `state.value`.
 val event: Flow<Event>
 ```
 
-A cold `Flow` of one-time side effects emitted via `event()`. Collected by `PulseContent`.
+A cold `Flow` of one-time side effects emitted via `event()`. Collected by `PulseContent`. Each
+event goes to a single collector, so events are consumed rather than replayed to later collectors.
 
 ---
 
@@ -120,6 +121,10 @@ fun event(effect: Event)
 ```
 
 Emits a one-time side effect to the UI layer. Collected by the `onEvent` lambda in `PulseContent`.
+
+Buffered, so it never suspends and keeps emission order. Events emitted while no `PulseContent` is
+collecting — the destination is covered by another one, say — wait in the buffer and arrive when a
+collector returns. The buffer holds 64; beyond that the oldest event is dropped.
 
 ---
 
