@@ -27,8 +27,8 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import jp.kaleidot725.pulse.demo.counter.app.CounterApp
-import jp.kaleidot725.pulse.demo.counter.detail.app.CounterDetailApp
+import jp.kaleidot725.pulse.demo.counter.app.CounterScreen
+import jp.kaleidot725.pulse.demo.counter.detail.app.CounterDetailScreen
 
 private sealed interface DemoRoute : NavKey {
     data object Counter : DemoRoute
@@ -91,10 +91,10 @@ fun DemoApp() {
             entryProvider =
                 entryProvider {
                     entry<DemoRoute.Counter> {
-                        CounterApp(onShowCounterDetails = showCounterDetails)
+                        CounterScreen(onShowCounterDetails = showCounterDetails)
                     }
                     entry<DemoRoute.CounterDetails> { route ->
-                        CounterDetailApp(
+                        CounterDetailScreen(
                             count = route.count,
                             onBack = popLast,
                         )

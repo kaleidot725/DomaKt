@@ -16,7 +16,7 @@ import jp.kaleidot725.pulse.mvi.rememberPulseStore
  * created here lives exactly as long as the route stays on the back stack.
  */
 @Composable
-fun CounterApp(onShowCounterDetails: (Int) -> Unit) {
+fun CounterScreen(onShowCounterDetails: (Int) -> Unit) {
     val store = rememberPulseStore { CounterOperatorStore(CounterRepository()) }
     val container = rememberPulseContainer { CounterContainer(stores = listOf(store)) }
 

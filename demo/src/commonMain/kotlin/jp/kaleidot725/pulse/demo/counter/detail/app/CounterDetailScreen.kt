@@ -17,7 +17,7 @@ import jp.kaleidot725.pulse.mvi.rememberPulseStore
  * later visit starts a fresh one. The counter destination underneath is untouched.
  */
 @Composable
-fun CounterDetailApp(
+fun CounterDetailScreen(
     count: Int,
     onBack: () -> Unit,
 ) {
