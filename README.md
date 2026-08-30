@@ -361,6 +361,8 @@ Observes a `PulseStore` and provides state and action dispatcher to the content 
 
 `PulseContent` only observes — it never starts or cancels the Store. The setup lifecycle belongs to `rememberPulseStore`: `onSetup()` runs once when the Store is created, and the scope is cancelled when the owning `ViewModelStoreOwner` is cleared. Leaving composition, including another Navigation 3 destination covering the route, therefore never repeats setup or loses Store state.
 
+With `rememberViewModelStoreNavEntryDecorator()` in `NavDisplay`'s `entryDecorators`, each destination gets its own owner, so a Store created inside a destination lives exactly as long as its route stays on the back stack.
+
 ```kotlin
 PulseContent(
     store = myStore,

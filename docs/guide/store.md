@@ -36,6 +36,8 @@ override fun onSetup() {
 Always create the Store with `rememberPulseStore`. It owns the setup lifecycle: `onSetup()` runs once when the Store is created, and the scope is cancelled when the owning `ViewModelStoreOwner` is cleared. Rotation preserves state and does not repeat `onSetup()`.
 
 Because the lifecycle follows the owner rather than the composition, covering the route with another Navigation 3 destination, or refreshing its subtree, never repeats setup.
+
+To tie a Store to a single destination instead of the whole screen, add `rememberViewModelStoreNavEntryDecorator()` to `NavDisplay`'s `entryDecorators` and call `rememberPulseStore` inside the destination. The entry then owns the Store, and popping the route cancels it.
 :::
 
 ### `onAction(uiAction)`
