@@ -1,10 +1,7 @@
 package jp.kaleidot725.pulse.mvi.navigation3
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -33,7 +30,7 @@ public inline fun <reified Store : PulseStore<*, *, *, *, *>> rememberPulseStore
     key: String? = null,
     noinline factory: () -> Store,
 ): Store {
-    val resolvedKey = key ?: (Store::class.simpleName ?: "PulseStore")
+    val resolvedKey = key ?: (Store::class.qualifiedName ?: Store::class.simpleName ?: "PulseStore")
     val store = rememberPulseStoreHolder(resolvedKey, factory).store
     check(store is Store) {
         "Key \"$resolvedKey\" is already used by ${store::class.simpleName}. Pass a unique key to rememberPulseStore()."
@@ -55,7 +52,7 @@ public inline fun <reified Container : PulseContainer<*, *>> rememberPulseContai
     key: String? = null,
     noinline factory: () -> Container,
 ): Container {
-    val resolvedKey = key ?: (Container::class.simpleName ?: "PulseContainer")
+    val resolvedKey = key ?: (Container::class.qualifiedName ?: Container::class.simpleName ?: "PulseContainer")
     val container = rememberPulseContainerHolder(resolvedKey, factory).container
     check(container is Container) {
         "Key \"$resolvedKey\" is already used by ${container::class.simpleName}. " +
@@ -89,20 +86,21 @@ internal fun rememberPulseContainerHolder(
     )
 
 /**
- * Returns the host [ViewModelStoreOwner], or a composition scoped fallback when the host does not
- * provide one. The fallback never outlives the composition, so it only applies to hosts without
- * configuration changes.
+ * Returns the host [ViewModelStoreOwner].
+ *
+ * Android, iOS and Desktop hosts all provide one. Embedding Compose somewhere that does not means
+ * there is nothing to own a lifetime, so this fails rather than inventing an owner: a
+ * composition scoped stand-in would be created once per call site, putting a Store and its
+ * Container in different `ViewModelStore`s and quietly breaking the "unique key per owner" rule.
  */
 @PublishedApi
 @Composable
-internal fun rememberPulseViewModelStoreOwner(): ViewModelStoreOwner {
-    val hostOwner = LocalViewModelStoreOwner.current
-    val fallbackOwner = remember { PulseViewModelStoreOwner() }
-    DisposableEffect(fallbackOwner) {
-        onDispose { fallbackOwner.viewModelStore.clear() }
+internal fun rememberPulseViewModelStoreOwner(): ViewModelStoreOwner =
+    checkNotNull(LocalViewModelStoreOwner.current) {
+        "No ViewModelStoreOwner in scope. Provide one with " +
+            "CompositionLocalProvider(LocalViewModelStoreOwner provides owner), or drive the Store " +
+            "lifecycle yourself with the pulsemvi artifact alone."
     }
-    return hostOwner ?: fallbackOwner
-}
 
 @PublishedApi
 internal class PulseStoreHolder(
@@ -113,7 +111,7 @@ internal class PulseStoreHolder(
     }
 
     override fun onCleared() {
-        store.cancel()
+        store.close()
     }
 }
 
@@ -124,11 +122,6 @@ internal class PulseContainerHolder(
     override fun onCleared() {
         container.close()
     }
-}
-
-@PublishedApi
-internal class PulseViewModelStoreOwner : ViewModelStoreOwner {
-    override val viewModelStore: ViewModelStore = ViewModelStore()
 }
 
 /**

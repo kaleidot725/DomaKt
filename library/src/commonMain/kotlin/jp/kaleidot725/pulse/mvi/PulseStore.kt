@@ -50,9 +50,25 @@ public abstract class PulseStore<
 
     public open fun onReceive(broadcast: Broadcast) {}
 
+    /**
+     * Cancels the work started in [onSetup] and prepares the Store to be set up again.
+     *
+     * The scope is replaced with a fresh one, so a later [onSetup] runs normally and the state is
+     * kept. Use this when the Store may become active again; use [close] when it will not.
+     */
     public fun cancel() {
         coroutineScope.cancel()
         coroutineScope = createCoroutineScope(coroutineDispatcher)
+    }
+
+    /**
+     * Cancels the work started in [onSetup] for good.
+     *
+     * Unlike [cancel] this does not replace the scope, so nothing launched afterwards can outlive
+     * the Store. Anything still holding a reference gets a cancelled scope rather than a live one.
+     */
+    public fun close() {
+        coroutineScope.cancel()
     }
 
     public fun update(block: UiState.() -> UiState) {

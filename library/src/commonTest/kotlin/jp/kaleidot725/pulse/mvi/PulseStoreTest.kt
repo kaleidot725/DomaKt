@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.test.Test
@@ -41,6 +42,18 @@ class PulseStoreTest {
         store.cancel()
 
         assertTrue(setupJob.isCancelled)
+    }
+
+    @Test
+    fun closeLeavesNoScopeToLaunchInto() {
+        val store = TestStore()
+
+        store.onSetup()
+        val setupJob = requireNotNull(store.setupJob)
+        store.close()
+
+        assertTrue(setupJob.isCancelled)
+        assertFalse(store.coroutineScope.isActive)
     }
 
     @Test
