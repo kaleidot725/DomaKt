@@ -4,8 +4,12 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runTest
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -57,6 +61,30 @@ class PulseStoreTest {
     }
 
     @Test
+    fun eventsEmittedWithNoCollectorKeepTheirOrder() =
+        runTest {
+            val store = TestStore()
+
+            store.event(TestEvent.Message("first"))
+            store.event(TestEvent.Message("second"))
+
+            assertEquals(
+                listOf(TestEvent.Message("first"), TestEvent.Message("second")),
+                store.event.take(2).toList(),
+            )
+        }
+
+    @Test
+    fun eventBufferDropsTheOldestOnceItIsFull() =
+        runTest {
+            val store = TestStore()
+
+            repeat(70) { store.event(TestEvent.Message("event $it")) }
+
+            assertEquals(TestEvent.Message("event 6"), store.event.first())
+        }
+
+    @Test
     fun stateIsPreservedAcrossSetups() {
         val store = TestStore()
 
@@ -76,7 +104,11 @@ private data class TestState(
 
 private data object TestAction : PulseAction
 
-private data object TestEvent : PulseEvent
+private sealed interface TestEvent : PulseEvent {
+    data class Message(
+        val text: String,
+    ) : TestEvent
+}
 
 private data object TestBroadcast : PulseBroadcast
 

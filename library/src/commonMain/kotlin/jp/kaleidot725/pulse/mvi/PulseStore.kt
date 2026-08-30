@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -15,7 +16,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 
 public abstract class PulseStore<
     UiState : PulseState,
@@ -36,7 +36,8 @@ public abstract class PulseStore<
 
     public val currentState: UiState get() = state.value
 
-    private val _event: Channel<Event> by lazy { Channel() }
+    private val _event: Channel<Event> =
+        Channel(capacity = 64, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
     public val event: Flow<Event> = _event.receiveAsFlow()
 
@@ -75,8 +76,16 @@ public abstract class PulseStore<
         uiState.update { block(it) }
     }
 
+    /**
+     * Emits a one-time event to [event].
+     *
+     * Buffered, so this never suspends and never needs a coroutine: events keep their emission
+     * order, and emitting while nothing collects - the screen is off the composition, say - queues
+     * them instead of parking a coroutine per event. The buffer holds 64; older events are dropped
+     * once it is full.
+     */
     public fun event(effect: Event) {
-        coroutineScope.launch { _event.send(effect) }
+        _event.trySend(effect)
     }
 
     public fun unicast(unicast: Unicast) {
