@@ -38,6 +38,27 @@ class DemoNavigationTest {
         waitForTaggedText("counter-detail-value", "2")
     }
 
+    @Test
+    fun detailStoreIsScopedToItsRouteWhileCounterSurvives() {
+        composeRule.setContent { DemoApp() }
+
+        composeRule.onNodeWithText("+").performClick()
+        waitForTaggedText("counter-value", "1")
+
+        composeRule.onNodeWithTag("open-counter-details").performClick()
+        waitForTaggedText("detail-setup-count", "onSetup() calls: 1")
+        composeRule.onNodeWithText("Reload (0)").performClick()
+        composeRule.waitUntilExactlyOneExists(hasText("Reload (1)"), timeoutMillis = 5_000)
+
+        composeRule.onNodeWithTag("back-to-counter").performClick()
+        waitForTaggedText("counter-value", "1")
+        composeRule.onNodeWithTag("setup-count").assertTextEquals("onSetup() calls: 1")
+
+        composeRule.onNodeWithTag("open-counter-details").performClick()
+        waitForTaggedText("detail-setup-count", "onSetup() calls: 1")
+        composeRule.waitUntilExactlyOneExists(hasText("Reload (0)"), timeoutMillis = 5_000)
+    }
+
     private fun waitForTaggedText(
         tag: String,
         text: String,
