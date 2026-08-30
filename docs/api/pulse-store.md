@@ -75,7 +75,7 @@ A `CoroutineScope` backed by `SupervisorJob` and the dispatcher passed to the co
 open fun onSetup()
 ```
 
-Called when the Store first gains an active `PulseContent` observer or retention. The scope is cancelled after all observers and retentions are released, and `onSetup()` runs again the next time it becomes active. Override it to start data-collection coroutines. Store state is preserved while inactive.
+Called once, by whoever owns the Store's lifetime — `rememberPulseStore` calls it when the Store is created. `PulseContent` never does. Override it to start data-collection coroutines; they run in `coroutineScope` and stop when it is cancelled.
 
 ---
 
@@ -139,7 +139,17 @@ Emits a child-to-parent message. The parent `PulseContainer` collects the Store'
 fun cancel()
 ```
 
-Cancels the current `coroutineScope` and prepares the Store for reuse. Called automatically when the owning `ViewModelStoreOwner` is cleared. Calling `onSetup()` again runs with a new scope and the preserved state.
+Cancels the work started in `onSetup()` and replaces the scope with a fresh one, so calling `onSetup()` again runs normally with the state preserved. Use it when the Store may become active again.
+
+---
+
+### `close()`
+
+```kotlin
+fun close()
+```
+
+Cancels the work started in `onSetup()` for good, without replacing the scope. `rememberPulseStore` calls it when the owning `ViewModelStoreOwner` is cleared, so a discarded Store cannot launch anything that outlives it.
 
 ## Example
 

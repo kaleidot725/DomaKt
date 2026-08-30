@@ -54,7 +54,7 @@ class CounterStore(
 ) : PulseStore<CounterState, CounterAction, CounterEvent, CounterBroadcast, CounterUnicast>(
     initialUiState = CounterState(),
 ) {
-    // Called for the first active PulseContent observer
+    // Called once, by rememberPulseStore, when the Store is created
     override fun onSetup() {
         coroutineScope.launch {
             repository.count.collect { count ->

@@ -20,7 +20,7 @@ class MyStore : PulseStore<MyState, MyAction, MyEvent, MyBroadcast, MyUnicast>(
 
 ### `onSetup()`
 
-Called when the first `PulseContent` observing the Store enters composition. Use this to start long-running coroutines such as repository flows:
+Called once by whoever owns the Store's lifetime. `PulseContent` never calls it — see [Driving the lifecycle yourself](#driving-the-lifecycle-yourself) for the core artifact. Use this to start long-running coroutines such as repository flows:
 
 ```kotlin
 override fun onSetup() {

@@ -96,6 +96,10 @@ dependencies {
 | `pulsemvi` | `PulseState`, `PulseAction`, `PulseEvent`, `PulseBroadcast`, `PulseUnicast`, `PulseStore`, `PulseContainer`, `PulseHost`, `PulseContent`. Depends on the Compose runtime and coroutines only |
 | `pulsemvi-navigation3` | `rememberPulseStore`, `rememberPulseContainer` and `rememberPulseNavEntryDecorators`. Adds `androidx.lifecycle` and Navigation 3 |
 
+`pulsemvi` publishes `iosX64` (the Intel simulator); `pulsemvi-navigation3` does not, because
+`navigation3-ui` has no such variant. Drop `iosX64()` from your targets, or keep the core artifact
+alone there.
+
 The core artifact leaves the Store lifetime to you: call `onSetup()` when the Store becomes active
 and `cancel()` when it is done. In a composition that is one `DisposableEffect`:
 
@@ -320,7 +324,7 @@ Base class for managing UI state within a specific screen component.
 | `currentState: UiState` | Snapshot of the current UI state |
 | `event: Flow<Event>` | Stream of one-time side effects |
 | `coroutineScope` | CoroutineScope tied to the Store's lifecycle |
-| `onSetup()` | Called when the Store first becomes active; called again only after all observers and retentions are released |
+| `onSetup()` | Called once by whoever owns the Store's lifetime; `PulseContent` never calls it |
 | `onAction(uiAction)` | Called when a user action is dispatched |
 | `onReceive(broadcast)` | Called when the Container broadcasts a message |
 | `unicast(unicast)` | Emits a child-to-parent message |
@@ -385,10 +389,11 @@ Nothing removes a Store from its owner before the owner is cleared, so creating 
 lived owner accumulates them. Scope them to a narrower owner when a screen creates Stores it will not
 need again.
 
-On hosts that do not provide a `ViewModelStoreOwner`, a composition scoped fallback owner is used.
-Android (`ComponentActivity`), iOS (`ComposeUIViewController`), and Desktop (`Window`) all provide
-one, so the fallback only applies to bare test hosts — and there a configuration change would lose
-the Store.
+Android (`ComponentActivity`), iOS (`ComposeUIViewController`) and Desktop (`Window`) all provide a
+`ViewModelStoreOwner`. Embedding Compose somewhere that does not means nothing owns a lifetime, and
+`rememberPulseStore` says so rather than inventing an owner: provide one with
+`CompositionLocalProvider(LocalViewModelStoreOwner provides owner)`, or use the core artifact alone
+and drive the lifecycle yourself.
 
 iOS and Desktop have no configuration change, so nothing rebuilds the composition behind your back
 there and the Store simply lives as long as its host: on iOS the owner is cleared when the
@@ -453,7 +458,8 @@ sealed interface MyUnicast : PulseUnicast {
 
 See the [`demo`](demo/) module for an Android, iOS, and Desktop Compose Multiplatform application
 using Navigation 3, and [`iosApp`](iosApp/) for the Xcode project that hosts it on iOS. It shows
-Store setup, back-stack retention, state preservation, broadcast, and unicast behavior on screen.
+Store setup, per destination lifetimes, and state preservation across configuration changes on
+screen.
 
 Run the Desktop demo:
 

@@ -24,7 +24,7 @@ without rebuilding the Store.
 
 | Parameter | Type | Description |
 |---|---|---|
-| `key` | `String?` | Unique key within the owner. Defaults to the Store class name |
+| `key` | `String?` | Unique key within the owner. Defaults to the Store's qualified class name |
 | `factory` | `() -> Store` | Called once per owner to create the Store |
 
 ### Lifecycle behavior
@@ -46,7 +46,7 @@ long the Store lives, and anything that changes that owner changes the Store's l
 | The host (`ComponentActivity`, `ComposeUIViewController`, Desktop `Window`) | As long as the screen; survives configuration changes |
 | A Navigation 3 entry, via `rememberPulseNavEntryDecorators()` as `NavDisplay`'s `entryDecorators` | As long as the route stays on the back stack; cancelled when the route is popped |
 | One you provide with `CompositionLocalProvider(LocalViewModelStoreOwner provides ...)` | As long as you keep that owner |
-| None provided by the host | As long as the composition — a fallback owner is used, so configuration changes lose the Store |
+| None provided by the host | `rememberPulseStore` fails with a message: nothing owns a lifetime, so provide an owner or use the core artifact alone |
 
 Two consequences worth planning for:
 
@@ -100,7 +100,7 @@ Creates a Container that survives configuration changes, keeping its Unicast sub
 
 | Parameter | Type | Description |
 |---|---|---|
-| `key` | `String?` | Unique key within the owner. Defaults to the Container class name |
+| `key` | `String?` | Unique key within the owner. Defaults to the Container's qualified class name |
 | `factory` | `() -> Container` | Called once per owner to create the Container |
 
 ### Example
