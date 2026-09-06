@@ -10,7 +10,7 @@ import jp.kaleidot725.pulse.mvi.PulseViewModel
 /**
  * One quadrant. Four of these share a [GridContainer], and none of them knows the others exist.
  *
- * A tap is this area's own business: [pulse] counts it locally and only then announces it as a
+ * A tap is this area's own business: [sendPulse] counts it locally and only then announces it as a
  * Unicast. The Container broadcasts that to everyone, this area included, so [receivePulse] drops
  * the copy that came from itself — it has already been counted, and counting it twice would count
  * the tap twice. What the round trip is for is the areas that did not hear the tap first hand.
@@ -26,7 +26,7 @@ class AreaViewModel(
 
     override fun onAction(uiAction: AreaAction) {
         when (uiAction) {
-            AreaAction.Pulse -> pulse()
+            AreaAction.Pulse -> sendPulse()
         }
     }
 
@@ -37,7 +37,7 @@ class AreaViewModel(
         }
     }
 
-    private fun pulse() {
+    private fun sendPulse() {
         val position = currentState.position
         count(firedAt = position)
         unicast(GridUnicast.Pulsed(position))
@@ -45,7 +45,7 @@ class AreaViewModel(
 
     private fun receivePulse(origin: AreaPosition) {
         val position = currentState.position
-        // Its own pulse comes back with everyone else's copy. [pulse] already counted it.
+        // Its own pulse comes back with everyone else's copy. [sendPulse] already counted it.
         if (origin == position) return
         if (origin !in position.neighbors) return
 
