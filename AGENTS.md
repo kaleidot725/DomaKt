@@ -51,8 +51,11 @@ PulseMVI/
 │   └── src/commonMain/kotlin/jp/kaleidot725/pulse/mvi/navigation3/
 │       └── PulseNavigation.kt        # rememberPulseViewModel / rememberPulseContainer /
 │                                     # rememberPulseNavEntryDecorators
-├── demo/                             # Compose Desktop demo app (Navigation 3)
+├── demo/                             # Pulse grid demo app (Navigation 3)
 │   └── src/{commonMain,jvmMain,jvmTest}/
+│       # Four areas share a Container: an area counts its own tap and announces
+│       # it as a Unicast, the Container broadcasts it back to all four, and each
+│       # decides what to do — the origin ignores the copy of its own tap
 ├── docs/                             # VitePress documentation site
 ├── build.gradle.kts                  # Root build file
 ├── settings.gradle.kts               # Project settings
