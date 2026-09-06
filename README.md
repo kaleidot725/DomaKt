@@ -437,8 +437,8 @@ sealed interface MyUnicast : PulseUnicast {
 
 ## Example Application
 
-See the [`demo`](demo/) module for a Compose Desktop application using Navigation 3. It shows
-ViewModel setup, per destination lifetimes, and state preservation on screen.
+The [`demo`](demo/) module is a pulse grid: four areas sharing one Container, each unaware of the
+others.
 
 Run it:
 
@@ -446,15 +446,23 @@ Run it:
 ./gradlew :demo:run
 ```
 
-The demo shows this lifecycle:
+Tapping an area does not raise its own count. It sends the tap up as a Unicast, the Container
+broadcasts it back to all four, and each area works out from the origin what the pulse is worth to
+it — two points if it is the source, one if it shares an edge, nothing if it is the diagonal. One tap
+therefore moves three counts by two different amounts. Colour deepens with the count and each area
+flashes as the pulse reaches it.
 
-1. Opening Counter creates the ViewModel through `rememberPulseViewModel`, and `PulseContent` runs
-   `onSetup()` once. The screen shows the call count.
-2. Opening Count details keeps the ViewModel alive, so returning does not repeat setup.
-3. Restarting the composition while the owner survives rebuilds the UI but not the ViewModel: the
-   count, the back stack, and the setup counter all stay put. `demo/src/jvmTest` covers this.
-4. The ViewModel scope is cancelled, and the Container closed, only when the host's `ViewModelStore` is
-   cleared.
+That covers the whole vocabulary in one gesture:
+
+1. **Unicast** carries the tap from an area up to the Container
+2. **Broadcast** carries the pulse back down to every area, which decides for itself what it means
+3. **Event** fires when an area passes twelve, and the screen shows a snackbar
+4. **Refresh** rebuilds the cells while the counts stay put
+5. **Per destination lifetimes** — "New Area" pushes another grid that starts at zero, and the one
+   underneath is still there, untouched, when you come back
+
+`demo/src/jvmTest` asserts each of those, including that a composition restart under a surviving
+owner keeps the counts and does not repeat `onSetup()`.
 
 ## Building
 
