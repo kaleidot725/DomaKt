@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.sp
 import jp.kaleidot725.pulse.demo.grid.area.state.AreaAction
 import jp.kaleidot725.pulse.demo.grid.area.state.AreaEvent
 import jp.kaleidot725.pulse.demo.grid.area.state.AreaState
-import jp.kaleidot725.pulse.demo.grid.area.state.PulseRole
 import jp.kaleidot725.pulse.mvi.PulseContent
 
 /**
@@ -72,7 +71,7 @@ private fun AreaCell(
     val hue = state.position.hue
     val charge = (state.count.toFloat() / CHARGE_FULL).coerceIn(0f, 1f)
     val resting = Color.hsl(hue, 0.30f + 0.45f * charge, 0.90f - 0.45f * charge)
-    val flashStrength = if (state.lastRole == PulseRole.Origin) 1f else 0.55f
+    val flashStrength = if (state.lastOrigin == state.position) 1f else 0.55f
     val fill = lerp(resting, Color.hsl(hue, 1f, 0.96f), flash.value * flashStrength)
     val ink = if (charge > 0.55f) Color.White else Color.hsl(hue, 0.85f, 0.18f)
 
@@ -109,7 +108,7 @@ private fun AreaCell(
                     .testTag("count-${state.position.name}"),
         )
         Text(
-            text = "${state.lastRole.caption} · setup ${state.setupCount}",
+            text = "${state.caption} · setup ${state.setupCount}",
             fontSize = 11.sp,
             color = ink.copy(alpha = 0.65f),
             modifier = Modifier.testTag("caption-${state.position.name}"),
@@ -117,8 +116,11 @@ private fun AreaCell(
     }
 }
 
-private val PulseRole?.caption: String
-    get() = if (this == null) "out of reach" else "${name.lowercase()} +$gain"
+private val AreaState.caption: String
+    get() {
+        val origin = lastOrigin ?: return "out of reach"
+        return if (origin == position) "tapped" else "${origin.label.lowercase()} reached here"
+    }
 
 private val AreaPosition.hue: Float
     get() =

@@ -125,8 +125,8 @@ private fun GridHeader(
         )
         Text(
             text =
-                "Tap a quadrant to pulse it. The tapped area gains 2 and the two it shares an " +
-                    "edge with gain 1. The diagonal is out of reach.",
+                "Tap a quadrant to pulse it. It counts the tap, and so do the two it shares an " +
+                    "edge with. The diagonal is out of reach.",
             fontSize = 13.sp,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
         )

@@ -17,7 +17,7 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Covers the pulse itself: an area applies its own tap, announces it as a Unicast, the Container
+ * Covers the pulse itself: an area counts its own tap, announces it as a Unicast, the Container
  * broadcasts it back to all four, and each one works out from the origin what to do with it.
  */
 @OptIn(ExperimentalTestApi::class)
@@ -31,8 +31,8 @@ class PulseGridTest {
 
         composeRule.onNodeWithTag("area-TopLeft").performClick()
 
-        // Two, not four: the origin applies its own tap and then drops the broadcast copy of it.
-        assertCount("TopLeft", 2)
+        // One, not two: the origin counts its own tap and then drops the broadcast copy of it.
+        assertCount("TopLeft", 1)
         assertCount("TopRight", 1)
         assertCount("BottomLeft", 1)
         assertCount("BottomRight", 0)
@@ -44,7 +44,7 @@ class PulseGridTest {
 
         composeRule.onNodeWithTag("area-BottomRight").performClick()
 
-        assertCount("BottomRight", 2)
+        assertCount("BottomRight", 1)
         assertCount("TopRight", 1)
         assertCount("BottomLeft", 1)
         assertCount("TopLeft", 0)
@@ -55,13 +55,14 @@ class PulseGridTest {
         composeRule.setContent { DemoApp() }
 
         composeRule.onNodeWithTag("area-TopLeft").performClick()
-        assertCount("TopLeft", 2)
+        assertCount("TopLeft", 1)
         composeRule.onNodeWithTag("area-TopRight").performClick()
 
-        // TopLeft is a neighbor of TopRight, so the second pulse adds one to its own two.
-        assertCount("TopRight", 3)
-        assertCount("TopLeft", 3)
+        // TopLeft is a neighbour of TopRight, so the second pulse reaches it too.
+        assertCount("TopRight", 2)
+        assertCount("TopLeft", 2)
         assertCount("BottomRight", 1)
+        // BottomLeft is the diagonal of TopRight, so only the first pulse ever reached it.
         assertCount("BottomLeft", 1)
     }
 
@@ -70,7 +71,7 @@ class PulseGridTest {
         composeRule.setContent { DemoApp() }
 
         composeRule.onNodeWithTag("area-TopLeft").performClick()
-        assertCount("TopLeft", 2)
+        assertCount("TopLeft", 1)
 
         composeRule.onNodeWithTag("reset").performClick()
 
@@ -85,11 +86,11 @@ class PulseGridTest {
         composeRule.setContent { DemoApp() }
 
         composeRule.onNodeWithTag("area-TopLeft").performClick()
-        assertCount("TopLeft", 2)
+        assertCount("TopLeft", 1)
 
         composeRule.onNodeWithTag("refresh").performClick()
 
-        assertCount("TopLeft", 2)
+        assertCount("TopLeft", 1)
         assertCaption("TopLeft", "setup 1")
     }
 
@@ -98,7 +99,7 @@ class PulseGridTest {
         composeRule.setContent { DemoApp() }
 
         composeRule.onNodeWithTag("area-TopLeft").performClick()
-        assertCount("TopLeft", 2)
+        assertCount("TopLeft", 1)
 
         composeRule.onNodeWithTag("new-area").performClick()
         assertTitle("Area 2")
@@ -106,7 +107,7 @@ class PulseGridTest {
 
         composeRule.onNodeWithTag("back").performClick()
         assertTitle("Area 1")
-        assertCount("TopLeft", 2)
+        assertCount("TopLeft", 1)
     }
 
     @Test
@@ -121,13 +122,13 @@ class PulseGridTest {
         }
 
         composeRule.onNodeWithTag("area-TopLeft").performClick()
-        assertCount("TopLeft", 2)
+        assertCount("TopLeft", 1)
 
         // Throw the whole tree away and rebuild it, the way a host driven restart would.
         composeRule.runOnUiThread { generation.value += 1 }
         composeRule.waitForIdle()
 
-        assertCount("TopLeft", 2)
+        assertCount("TopLeft", 1)
         assertCaption("TopLeft", "setup 1")
     }
 
@@ -143,7 +144,7 @@ class PulseGridTest {
         }
 
         composeRule.onNodeWithTag("area-TopLeft").performClick()
-        assertCount("TopLeft", 2)
+        assertCount("TopLeft", 1)
 
         composeRule.runOnUiThread {
             generation.value += 1

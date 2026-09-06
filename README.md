@@ -145,10 +145,10 @@ others.
 ./gradlew :demo:run
 ```
 
-A tapped area owns its own state: it adds two points to itself, then announces the tap as a Unicast.
-The Container broadcasts that to all four areas, and each works out what to do with it — the origin
-drops the copy of its own tap, an area sharing an edge gains a point, and the diagonal does nothing.
-One tap therefore moves three counts by two different amounts.
+A tapped area owns its own state: it counts the tap itself, then announces it as a Unicast. The
+Container broadcasts that to all four areas, and each compares the origin against its own position
+to decide — the origin drops the copy of its own tap, an area sharing an edge counts it, and the
+diagonal does nothing. One tap therefore moves three of the four counts.
 
 "New Area" pushes another grid that starts at zero, and the one underneath is still there, untouched,
 when you come back. `demo/src/jvmTest` asserts all of it.
