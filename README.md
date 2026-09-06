@@ -446,16 +446,17 @@ Run it:
 ./gradlew :demo:run
 ```
 
-Tapping an area does not raise its own count. It sends the tap up as a Unicast, the Container
-broadcasts it back to all four, and each area works out from the origin what the pulse is worth to
-it — two points if it is the source, one if it shares an edge, nothing if it is the diagonal. One tap
-therefore moves three counts by two different amounts. Colour deepens with the count and each area
-flashes as the pulse reaches it.
+A tapped area owns its own state: it adds two points to itself, then announces the tap as a Unicast.
+The Container broadcasts that to all four areas, and each works out what to do with it — the origin
+drops the copy of its own tap, an area sharing an edge gains a point, and the diagonal does nothing.
+One tap therefore moves three counts by two different amounts. Colour deepens with the count and each
+area flashes as the pulse reaches it.
 
 That covers the whole vocabulary in one gesture:
 
 1. **Unicast** carries the tap from an area up to the Container
-2. **Broadcast** carries the pulse back down to every area, which decides for itself what it means
+2. **Broadcast** carries the pulse back down to every area, which decides for itself what it means —
+   including the origin, which ignores it
 3. **Event** fires when an area passes twelve, and the screen shows a snackbar
 4. **Refresh** rebuilds the cells while the counts stay put
 5. **Per destination lifetimes** — "New Area" pushes another grid that starts at zero, and the one

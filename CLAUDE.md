@@ -53,8 +53,9 @@ PulseMVI/
 │                                     # rememberPulseNavEntryDecorators
 ├── demo/                             # Pulse grid demo app (Navigation 3)
 │   └── src/{commonMain,jvmMain,jvmTest}/
-│       # Four areas share a Container: a tap becomes a Unicast, the Container
-│       # broadcasts it back, and each area decides what the pulse is worth to it
+│       # Four areas share a Container: an area applies its own tap and announces
+│       # it as a Unicast, the Container broadcasts it back to all four, and each
+│       # decides what to do — the origin ignores the copy of its own tap
 ├── docs/                             # VitePress documentation site
 ├── build.gradle.kts                  # Root build file
 ├── settings.gradle.kts               # Project settings

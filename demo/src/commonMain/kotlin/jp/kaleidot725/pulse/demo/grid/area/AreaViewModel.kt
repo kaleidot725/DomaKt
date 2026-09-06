@@ -11,9 +11,10 @@ import jp.kaleidot725.pulse.mvi.PulseViewModel
 /**
  * One quadrant. Four of these share a [GridContainer], and none of them knows the others exist.
  *
- * A tap does not change this area directly: [onAction] sends the tap up as a Unicast, the Container
- * broadcasts it back, and [onReceive] applies it. The round trip is what lets a single tap raise
- * three different counts by three different amounts.
+ * A tap is this area's own business: [onAction] applies it locally and only then announces it as a
+ * Unicast. The Container broadcasts that to everyone, this area included, so [onReceive] drops the
+ * copy that came from itself — it has already been applied, and applying it twice would count the
+ * tap twice. What the round trip is for is the areas that did not hear the tap first hand.
  */
 class AreaViewModel(
     position: AreaPosition,
@@ -26,7 +27,10 @@ class AreaViewModel(
 
     override fun onAction(uiAction: AreaAction) {
         when (uiAction) {
-            AreaAction.Pulse -> unicast(GridUnicast.Pulsed(currentState.position))
+            AreaAction.Pulse -> {
+                gain(ORIGIN_GAIN, PulseRole.Origin)
+                unicast(GridUnicast.Pulsed(currentState.position))
+            }
         }
     }
 
@@ -39,19 +43,22 @@ class AreaViewModel(
 
     private fun receive(origin: AreaPosition) {
         val position = currentState.position
-        val role =
-            when {
-                origin == position -> PulseRole.Origin
-                origin in position.neighbors -> PulseRole.Neighbor
-                else -> return
-            }
+        // Its own pulse comes back with everyone else's copy. [onAction] already applied it.
+        if (origin == position) return
+        if (origin !in position.neighbors) return
 
-        val gain = if (role == PulseRole.Origin) ORIGIN_GAIN else NEIGHBOR_GAIN
+        gain(NEIGHBOR_GAIN, PulseRole.Neighbor)
+    }
+
+    private fun gain(
+        amount: Int,
+        role: PulseRole,
+    ) {
         val before = currentState.count
-        update { copy(count = count + gain, lastRole = role, pulseId = pulseId + 1) }
+        update { copy(count = count + amount, lastRole = role, pulseId = pulseId + 1) }
 
         if (before < CHARGED_AT && currentState.count >= CHARGED_AT) {
-            event(AreaEvent.Charged(position, currentState.count))
+            event(AreaEvent.Charged(currentState.position, currentState.count))
         }
     }
 

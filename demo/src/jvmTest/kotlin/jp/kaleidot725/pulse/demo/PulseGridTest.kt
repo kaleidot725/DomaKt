@@ -17,8 +17,8 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Covers the pulse itself: a tap becomes a Unicast, the Container broadcasts it back to all four
- * areas, and each one works out from the origin what the pulse is worth to it.
+ * Covers the pulse itself: an area applies its own tap, announces it as a Unicast, the Container
+ * broadcasts it back to all four, and each one works out from the origin what to do with it.
  */
 @OptIn(ExperimentalTestApi::class)
 class PulseGridTest {
@@ -31,6 +31,7 @@ class PulseGridTest {
 
         composeRule.onNodeWithTag("area-TopLeft").performClick()
 
+        // Two, not four: the origin applies its own tap and then drops the broadcast copy of it.
         assertCount("TopLeft", 2)
         assertCount("TopRight", 1)
         assertCount("BottomLeft", 1)

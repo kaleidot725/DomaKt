@@ -8,9 +8,10 @@ import jp.kaleidot725.pulse.mvi.PulseViewModel
 /**
  * Turns one area's Unicast into a Broadcast for all four.
  *
- * This is the whole pulse: a tapped area does not raise its own count, it reports upwards, and the
- * Container sends the pulse back down to everyone. Each area then decides what the pulse means for
- * it, so adding a fifth area would not change this class.
+ * A tapped area applies the tap to itself and reports it upwards; the Container sends it back down
+ * to everyone. The broadcast goes to all four rather than to a computed set of neighbours: the
+ * Container does not know the layout, so each area decides what the pulse means for it — including
+ * the origin, which drops the copy of its own tap. Adding a fifth area would not change this class.
  */
 class GridContainer(
     viewModels: List<PulseViewModel<*, *, *, GridBroadcast, GridUnicast>>,
