@@ -6,7 +6,7 @@
 [![](https://jitpack.io/v/kaleidot725/PulseMVI.svg)](https://jitpack.io/#kaleidot725/PulseMVI)
 
 A lightweight MVI library for **Compose Desktop**.
-Designed for Desktop's multi-Composable layouts, PulseMVI adds **Broadcast** to notify all ViewModels simultaneously, **Unicast** to send child ViewModel messages up to the Container, and **View Refresh** to reconstruct the view tree on demand.
+PulseMVI adds **Broadcast** to notify all ViewModels simultaneously, **Unicast** to send child ViewModel messages up to the Container, and **View Refresh** to reconstruct the view tree on demand.
 
 ![demo](docs/demo.png)
 
@@ -24,7 +24,7 @@ Designed for Desktop's multi-Composable layouts, PulseMVI adds **Broadcast** to 
 
 - Java 17 or higher
 - Kotlin 2.0 or higher
-- Compose Multiplatform project
+- A Compose Desktop (JVM) project
 
 ## Installation
 
@@ -40,7 +40,10 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.kaleidot725:PulseMVI:Tag")
+    implementation("com.github.kaleidot725:pulsemvi:Tag")
+
+    // Optional: owner scoped lifetimes and Navigation 3 back stack scoping
+    implementation("com.github.kaleidot725:pulsemvi-navigation3:Tag")
 }
 ```
 
@@ -52,7 +55,10 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.kaleidot725:PulseMVI:Tag'
+    implementation 'com.github.kaleidot725:pulsemvi:Tag'
+
+    // Optional: owner scoped lifetimes and Navigation 3 back stack scoping
+    implementation 'com.github.kaleidot725:pulsemvi-navigation3:Tag'
 }
 ```
 
@@ -68,12 +74,43 @@ dependencies {
 
 <dependency>
     <groupId>com.github.kaleidot725</groupId>
-    <artifactId>PulseMVI</artifactId>
+    <artifactId>pulsemvi</artifactId>
+    <version>Tag</version>
+</dependency>
+
+<!-- Optional: owner scoped lifetimes and Navigation 3 back stack scoping -->
+<dependency>
+    <groupId>com.github.kaleidot725</groupId>
+    <artifactId>pulsemvi-navigation3</artifactId>
     <version>Tag</version>
 </dependency>
 ```
 
 > **Note**: Replace `Tag` with the desired version tag (e.g., `v1.0.0`) or a specific commit hash.
+
+### Artifacts
+
+| Artifact | Contents |
+|---|---|
+| `pulsemvi` | `PulseState`, `PulseAction`, `PulseEvent`, `PulseBroadcast`, `PulseUnicast`, `PulseViewModel`, `PulseContainer`, `PulseHost`, `PulseContent`. Depends on the Compose runtime and coroutines only |
+| `pulsemvi-navigation3` | `rememberPulseViewModel`, `rememberPulseContainer` and `rememberPulseNavEntryDecorators`. Adds `androidx.lifecycle` and Navigation 3 |
+
+`PulseViewModel` and `PulseContainer` extend `androidx.lifecycle.ViewModel`, so the core artifact
+works with anything that creates one — `viewModel()`, `koinViewModel()`, or a plain `remember`.
+`PulseContent` runs `onSetup()` through `setupOnce()` the first time it observes an instance, and
+`onCleared()` cancels the scope, so the owning `ViewModelStore` decides the lifetime:
+
+```kotlin
+val viewModel = viewModel { CounterViewModel(repository) }
+
+PulseContent(viewModel = viewModel) { state, onAction ->
+    // Compose UI
+}
+```
+
+Add `pulsemvi-navigation3` for `rememberPulseViewModel`, which defaults the key to the qualified
+class name, and for `rememberPulseNavEntryDecorators()`, which scopes an instance to a Navigation 3
+back stack entry.
 
 ## Architecture
 
@@ -139,6 +176,8 @@ sealed interface CounterUnicast : PulseUnicast {
 
 `PulseViewModel` manages its own UI state and handles user actions. Override `onSetup` to initialize subscriptions, `onAction` to handle user intents, and `onReceive` to react to broadcasts.
 
+Both `PulseViewModel` and `PulseContainer` accept an optional `coroutineDispatcher` constructor argument. It defaults to `Dispatchers.Default`, and tests can pass a test dispatcher.
+
 ```kotlin
 class CounterViewModel(
     private val repository: CounterRepository,
@@ -196,30 +235,29 @@ class CounterContainer(
 
 ### 4. Connect to Compose UI
 
-Instantiate ViewModels in the entry point, then use `PulseApp` for layout and `PulseContent` inside it to observe each ViewModel. `PulseContent` automatically responds to `refresh()` when nested inside `PulseApp`.
+Instantiate ViewModels in the entry point, then use `PulseHost` for layout and `PulseContent` inside it to observe each ViewModel. `PulseContent` automatically responds to `refresh()` when nested inside `PulseHost`.
 
 **Entry point** — create ViewModels once and pass them down:
 
 ```kotlin
 fun main() = application {
-    val repository = remember { CounterRepository() }
-    val viewModel = remember { CounterViewModel(repository) }
-    val container = remember { CounterContainer(viewModels = listOf(viewModel)) }
-
     Window(onCloseRequest = ::exitApplication, title = "Counter") {
         MaterialTheme {
-            CounterApp(container = container, viewModel = viewModel)
+            val viewModel = rememberPulseViewModel { CounterViewModel(CounterRepository()) }
+            val container = rememberPulseContainer { CounterContainer(viewModels = listOf(viewModel)) }
+
+            CounterScreen(container = container, viewModel = viewModel)
         }
     }
 }
 ```
 
-**App composable** — wrap with `PulseApp` and expose refresh/broadcast controls:
+**Screen composable** — wrap with `PulseHost` and expose refresh/broadcast controls:
 
 ```kotlin
 @Composable
-fun CounterApp(container: CounterContainer, viewModel: CounterViewModel) {
-    PulseApp(container = container) { onRefresh, onBroadcast ->
+fun CounterScreen(container: CounterContainer, viewModel: CounterViewModel) {
+    PulseHost(container = container) { onRefresh, onBroadcast ->
         Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Row(modifier = Modifier.align(Alignment.TopEnd)) {
                 Button(onClick = { onRefresh() }) { Text("Refresh View") }
@@ -274,7 +312,7 @@ Base class for managing UI state within a specific screen component.
 | `currentState: UiState` | Snapshot of the current UI state |
 | `event: Flow<Event>` | Stream of one-time side effects |
 | `coroutineScope` | CoroutineScope tied to the ViewModel's lifecycle |
-| `onSetup()` | Called when the ViewModel is first subscribed to |
+| `onSetup()` | Called once, by `PulseContent`, the first time it observes the ViewModel |
 | `onAction(uiAction)` | Called when a user action is dispatched |
 | `onReceive(broadcast)` | Called when the Container broadcasts a message |
 | `unicast(unicast)` | Emits a child-to-parent message |
@@ -294,12 +332,64 @@ Base class for coordinating multiple ViewModels.
 
 ### Composable Helpers
 
-#### PulseApp
+#### rememberPulseViewModel / rememberPulseContainer
+
+Creates a ViewModel or a Container held in the `ViewModelStore` of the current
+`ViewModelStoreOwner`. A composition restart then reuses the instance rather than rebuilding it:
+state is preserved and `onSetup()` is not repeated. The ViewModel scope is cancelled, and
+`PulseContainer.close()` is called, only once the owner is cleared.
+
+```kotlin
+@Composable
+fun CounterScreen() {
+    val viewModel = rememberPulseViewModel { CounterViewModel(CounterRepository()) }
+    val container = rememberPulseContainer { CounterContainer(viewModels = listOf(viewModel)) }
+
+    PulseHost(container = container) { _, _ ->
+        PulseContent(viewModel = viewModel) { state, onAction ->
+            // Compose UI
+        }
+    }
+}
+```
+
+The key defaults to the class name. Pass an explicit `key` when the same type is used more than once
+under a single owner:
+
+```kotlin
+val left = rememberPulseViewModel(key = "left") { CounterViewModel(leftRepository) }
+val right = rememberPulseViewModel(key = "right") { CounterViewModel(rightRepository) }
+```
+
+Internally both read `LocalViewModelStoreOwner.current` and keep a `ViewModel` in that owner's
+`ViewModelStore`. **Whatever owner is in scope at the call site decides how long the ViewModel lives**,
+so anything that changes that owner changes the lifetime:
+
+- Under the host owner, the ViewModel lives as long as the screen
+- Under a Navigation 3 entry — pass `rememberPulseNavEntryDecorators()` as `NavDisplay`'s
+  `entryDecorators` and create the ViewModel inside the destination — it lives as long as the route stays
+  on the back stack, and is cancelled when the route is popped
+- Under an owner you provide with `CompositionLocalProvider(LocalViewModelStoreOwner provides ...)`,
+  it lives as long as you keep that owner
+
+Nothing removes a ViewModel from its owner before the owner is cleared, so creating ViewModels under a long
+lived owner accumulates them. Scope them to a narrower owner when a screen creates ViewModels it will not
+need again.
+
+The Compose Desktop `Window` provides a `ViewModelStoreOwner`. Embedding Compose somewhere that
+does not means nothing owns a lifetime, and `rememberPulseViewModel` says so rather than inventing an
+owner: provide one with `CompositionLocalProvider(LocalViewModelStoreOwner provides owner)`, or
+create the instance yourself and let the composition hold it.
+
+> **Note**: `rememberPulseViewModel` does not restore state after the process exits. Use
+> `rememberSaveable` for anything that has to outlive it.
+
+#### PulseHost
 
 Manages a `PulseContainer` and provides `onRefresh` and `onBroadcast` callbacks to the content block. `PulseContent` placed inside automatically responds to `refresh()`.
 
 ```kotlin
-PulseApp(container = myContainer) { onRefresh, onBroadcast ->
+PulseHost(container = myContainer) { onRefresh, onBroadcast ->
     // Compose UI
     PulseContent(viewModel = myViewModel) { state, onAction ->
         // Compose UI
@@ -309,7 +399,11 @@ PulseApp(container = myContainer) { onRefresh, onBroadcast ->
 
 #### PulseContent
 
-Observes a `PulseViewModel` and provides state and action dispatcher to the content block. Automatically cancels the ViewModel's coroutine scope when removed from composition.
+Observes a `PulseViewModel` and provides state and action dispatcher to the content block.
+
+`PulseContent` only observes — it never starts or cancels the ViewModel. The setup lifecycle belongs to `rememberPulseViewModel`: `onSetup()` runs once when the ViewModel is created, and the scope is cancelled when the owning `ViewModelStoreOwner` is cleared. Leaving composition, including another Navigation 3 destination covering the route, therefore never repeats setup or loses ViewModel state.
+
+With `rememberPulseNavEntryDecorators()` as `NavDisplay`'s `entryDecorators`, each destination gets its own owner, so a ViewModel created inside a destination lives exactly as long as its route stays on the back stack.
 
 ```kotlin
 PulseContent(
@@ -343,13 +437,24 @@ sealed interface MyUnicast : PulseUnicast {
 
 ## Example Application
 
-See the [`demo`](demo/) module for a complete counter application demonstrating ViewModel, Container, Broadcast, and Unicast in action.
+See the [`demo`](demo/) module for a Compose Desktop application using Navigation 3. It shows
+ViewModel setup, per destination lifetimes, and state preservation on screen.
 
-Run the demo:
+Run it:
 
 ```bash
 ./gradlew :demo:run
 ```
+
+The demo shows this lifecycle:
+
+1. Opening Counter creates the ViewModel through `rememberPulseViewModel`, and `PulseContent` runs
+   `onSetup()` once. The screen shows the call count.
+2. Opening Count details keeps the ViewModel alive, so returning does not repeat setup.
+3. Restarting the composition while the owner survives rebuilds the UI but not the ViewModel: the
+   count, the back stack, and the setup counter all stay put. `demo/src/jvmTest` covers this.
+4. The ViewModel scope is cancelled, and the Container closed, only when the host's `ViewModelStore` is
+   cleared.
 
 ## Building
 
@@ -368,7 +473,7 @@ Run tests:
 Publish to local Maven:
 
 ```bash
-./gradlew :library:publishToMavenLocal
+./gradlew :library:publishToMavenLocal :navigation3:publishToMavenLocal
 ```
 
 ## License

@@ -20,7 +20,7 @@ class MyViewModel : PulseViewModel<MyState, MyAction, MyEvent, MyBroadcast, MyUn
 
 ### `onSetup()`
 
-Called once when the ViewModel's `state` is first collected. Use this to start long-running coroutines such as repository flows:
+Called once by whoever owns the ViewModel's lifetime. `PulseContent` never calls it — see [Driving the lifecycle yourself](#driving-the-lifecycle-yourself) for the core artifact. Use this to start long-running coroutines such as repository flows:
 
 ```kotlin
 override fun onSetup() {
@@ -32,8 +32,12 @@ override fun onSetup() {
 }
 ```
 
-::: warning
-`onSetup()` is also called after `cancel()` (i.e., after a view refresh). Coroutines launched here are automatically cancelled when `cancel()` is called.
+::: tip
+With `pulsemvi-navigation3`, create the ViewModel with `rememberPulseViewModel`. `PulseContent` runs `onSetup()` once, and the scope is cancelled when the owning `ViewModelStoreOwner` is cleared. A composition restart preserves state and does not repeat `onSetup()`.
+
+Because the lifecycle follows the owner rather than the composition, covering the route with another Navigation 3 destination, or refreshing its subtree, never repeats setup.
+
+To tie a ViewModel to a single destination instead of the whole screen, pass `rememberPulseNavEntryDecorators()` as `NavDisplay`'s `entryDecorators` and call `rememberPulseViewModel` inside the destination. The entry then owns the ViewModel, and popping the route cancels it.
 :::
 
 ### `onAction(uiAction)`
@@ -91,3 +95,34 @@ override fun onAction(uiAction: MyAction) {
     coroutineScope.launch { /* ... */ }
 }
 ```
+
+## Driving the lifecycle yourself
+
+`PulseContent` always runs `onSetup()` for you, whichever way the ViewModel was built. Teardown is
+the part that depends on the owner: `close()` runs from `onCleared()`, and only a `ViewModelStore`
+calls that. Hold a ViewModel in a plain `remember` and nothing ever clears it, so cancel it yourself:
+
+```kotlin
+val viewModel = remember { CounterViewModel(repository) }
+DisposableEffect(viewModel) {
+    onDispose { viewModel.cancel() }
+}
+
+PulseContent(viewModel = viewModel) { state, onAction ->
+    // Compose UI
+}
+```
+
+A Container needs the same treatment:
+
+```kotlin
+val container = remember { CounterContainer(viewModels = listOf(viewModel)) }
+DisposableEffect(container) {
+    onDispose { container.close() }
+}
+```
+
+::: warning
+The ViewModel then lives exactly as long as this composition. Leaving and re-entering it builds a
+new instance, so its state is lost. Add `pulsemvi-navigation3` when that matters.
+:::

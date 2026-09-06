@@ -2,6 +2,17 @@
 
 This guide walks you through building a simple counter app with PulseMVI.
 
+It uses `rememberPulseViewModel` to own the ViewModel, which comes from the `pulsemvi-navigation3` artifact.
+Add it alongside the core one, or see [ViewModel](/guide/viewmodel) for driving the lifecycle yourself with
+the core artifact alone.
+
+```kotlin
+dependencies {
+    implementation("com.github.kaleidot725:pulsemvi:<version>")
+    implementation("com.github.kaleidot725:pulsemvi-navigation3:<version>")
+}
+```
+
 ## 1. Define State, Action, Event, Broadcast, and Unicast
 
 Start by defining the five types that describe your feature:
@@ -43,7 +54,7 @@ class CounterViewModel(
 ) : PulseViewModel<CounterState, CounterAction, CounterEvent, CounterBroadcast, CounterUnicast>(
     initialUiState = CounterState(),
 ) {
-    // Called once when the ViewModel is first observed
+    // Called once, by rememberPulseViewModel, when the ViewModel is created
     override fun onSetup() {
         coroutineScope.launch {
             repository.count.collect { count ->
@@ -94,26 +105,25 @@ Create the ViewModel and Container once at the top level:
 
 ```kotlin
 fun main() = application {
-    val repository = remember { CounterRepository() }
-    val viewModel = remember { CounterViewModel(repository) }
-    val container = remember { CounterContainer(viewModels = listOf(viewModel)) }
-
     Window(onCloseRequest = ::exitApplication, title = "Counter") {
         MaterialTheme {
-            CounterApp(container = container, viewModel = viewModel)
+            val viewModel = rememberPulseViewModel { CounterViewModel(CounterRepository()) }
+            val container = rememberPulseContainer { CounterContainer(viewModels = listOf(viewModel)) }
+
+            CounterScreen(container = container, viewModel = viewModel)
         }
     }
 }
 ```
 
-### App composable
+### Screen composable
 
-Wrap your layout with `PulseApp` to enable refresh and broadcast:
+Wrap your layout with `PulseHost` to enable refresh and broadcast:
 
 ```kotlin
 @Composable
-fun CounterApp(container: CounterContainer, viewModel: CounterViewModel) {
-    PulseApp(container = container) { onRefresh, onBroadcast ->
+fun CounterScreen(container: CounterContainer, viewModel: CounterViewModel) {
+    PulseHost(container = container) { onRefresh, onBroadcast ->
         Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Row(modifier = Modifier.align(Alignment.TopEnd)) {
                 Button(onClick = { onRefresh() }) {
