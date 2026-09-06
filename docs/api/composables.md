@@ -33,7 +33,7 @@ PulseApp(container = appContainer) { onRefresh, onBroadcast ->
         Button(onClick = { onRefresh() }) {
             Text("Refresh View")
         }
-        MyContent(store = myStore)
+        MyContent(viewModel = myViewModel)
     }
 }
 ```
@@ -52,33 +52,33 @@ fun <
     Unicast : PulseUnicast,
 >
 PulseContent(
-    store: PulseStore<State, Action, Event, Broadcast, Unicast>,
+    viewModel: PulseViewModel<State, Action, Event, Broadcast, Unicast>,
     onEvent: (Event) -> Unit = {},
     content: @Composable (State, (Action) -> Unit) -> Unit = { _, _ -> },
 )
 ```
 
-Observes a `PulseStore` and provides state and an action dispatcher to the content block. Automatically cancels the Store when removed from the composition.
+Observes a `PulseViewModel` and provides state and an action dispatcher to the content block. Automatically cancels the ViewModel when removed from the composition.
 
 ### Parameters
 
 | Parameter | Type | Description |
 |---|---|---|
-| `store` | `PulseStore<State, Action, Event, Broadcast, Unicast>` | The Store to observe |
-| `onEvent` | `(Event) -> Unit` | Called for each one-time side effect emitted by the Store |
+| `viewModel` | `PulseViewModel<State, Action, Event, Broadcast, Unicast>` | The ViewModel to observe |
+| `onEvent` | `(Event) -> Unit` | Called for each one-time side effect emitted by the ViewModel |
 | `content` | `@Composable (State, (Action) -> Unit) -> Unit` | Renders the current state; receives a dispatcher to send actions |
 
 ### Lifecycle behavior
 
-- `LaunchedEffect(store)` starts `onSetup()` and begins collecting `event`
-- `DisposableEffect(store)` calls `store.cancel()` when the composable leaves the composition
+- `LaunchedEffect(viewModel)` starts `onSetup()` and begins collecting `event`
+- `DisposableEffect(viewModel)` calls `viewModel.cancel()` when the composable leaves the composition
 - When inside `PulseApp`, the composable is wrapped in `key(containerKey)` and re-creates on `refresh()`
 
 ### Example
 
 ```kotlin
 PulseContent(
-    store = counterStore,
+    viewModel = counterViewModel,
     onEvent = { event ->
         when (event) {
             is CounterEvent.ShowMessage ->

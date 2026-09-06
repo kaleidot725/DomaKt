@@ -1,7 +1,7 @@
-# PulseStore
+# PulseViewModel
 
 ```kotlin
-abstract class PulseStore<
+abstract class PulseViewModel<
     UiState : PulseState,
     UiAction : PulseAction,
     Event : PulseEvent,
@@ -14,7 +14,7 @@ abstract class PulseStore<
 
 Abstract base class for managing the UI state of a single screen or section.
 
-Use `unicast()` when the Store needs to send messages up to its parent Container.
+Use `unicast()` when the ViewModel needs to send messages up to its parent Container.
 
 ## Properties
 
@@ -128,7 +128,7 @@ Emits a one-time side effect to the UI layer. Collected by the `onEvent` lambda 
 fun unicast(unicast: Unicast)
 ```
 
-Emits a child-to-parent message. The parent `PulseContainer` collects the Store's `unicast` flow and receives it through `onReceived()`.
+Emits a child-to-parent message. The parent `PulseContainer` collects the ViewModel's `unicast` flow and receives it through `onReceived()`.
 
 ---
 
@@ -138,7 +138,7 @@ Emits a child-to-parent message. The parent `PulseContainer` collects the Store'
 fun cancel()
 ```
 
-Cancels the current `coroutineScope` and prepares the Store for reuse. Called automatically by `PulseContent` when it leaves the composition. After `cancel()`, the Store is ready to be re-subscribed (e.g., after a `refresh()`).
+Cancels the current `coroutineScope` and prepares the ViewModel for reuse. Called automatically by `PulseContent` when it leaves the composition. After `cancel()`, the ViewModel is ready to be re-subscribed (e.g., after a `refresh()`).
 
 ## Example
 
@@ -147,9 +147,9 @@ sealed interface CounterUnicast : PulseUnicast {
     data object ResetRequested : CounterUnicast
 }
 
-class CounterStore(
+class CounterViewModel(
     private val repository: CounterRepository,
-) : PulseStore<CounterState, CounterAction, CounterEvent, CounterBroadcast, CounterUnicast>(
+) : PulseViewModel<CounterState, CounterAction, CounterEvent, CounterBroadcast, CounterUnicast>(
     initialUiState = CounterState(),
 ) {
     override fun onSetup() {
@@ -182,9 +182,9 @@ sealed interface CounterUnicast : PulseUnicast {
     data object ResetRequested : CounterUnicast
 }
 
-class CounterStore(
+class CounterViewModel(
     private val repository: CounterRepository,
-) : PulseStore<CounterState, CounterAction, CounterEvent, CounterBroadcast, CounterUnicast>(
+) : PulseViewModel<CounterState, CounterAction, CounterEvent, CounterBroadcast, CounterUnicast>(
     initialUiState = CounterState(),
 ) {
     override fun onAction(uiAction: CounterAction) {

@@ -6,17 +6,17 @@
 [![](https://jitpack.io/v/kaleidot725/PulseMVI.svg)](https://jitpack.io/#kaleidot725/PulseMVI)
 
 A lightweight MVI library for **Compose Desktop**.
-Designed for Desktop's multi-Composable layouts, PulseMVI adds **Broadcast** to notify all Stores simultaneously, **Unicast** to send child Store messages up to the Container, and **View Refresh** to reconstruct the view tree on demand.
+Designed for Desktop's multi-Composable layouts, PulseMVI adds **Broadcast** to notify all ViewModels simultaneously, **Unicast** to send child ViewModel messages up to the Container, and **View Refresh** to reconstruct the view tree on demand.
 
 ![demo](docs/demo.png)
 
 ## Features
 
 - 🏗️ **MVI Architecture** - Clear separation of State, Action, Event, Broadcast, and Unicast
-- 🔄 **Store & Container** - Store manages state autonomously; Container coordinates multiple Stores
-- 📡 **Broadcast** - Type-safe messages delivered from Container to all registered Stores simultaneously
-- ⬆️ **Unicast** - Optional messages emitted from child Stores to the Container
-- 🖥️ **View Refresh** - Forces the view tree to reconstruct on demand while preserving Store state
+- 🔄 **ViewModel & Container** - ViewModel manages state autonomously; Container coordinates multiple ViewModels
+- 📡 **Broadcast** - Type-safe messages delivered from Container to all registered ViewModels simultaneously
+- ⬆️ **Unicast** - Optional messages emitted from child ViewModels to the Container
+- 🖥️ **View Refresh** - Forces the view tree to reconstruct on demand while preserving ViewModel state
 - ⚡ **Coroutine-Based** - Built on Kotlin Coroutines and StateFlow
 - 🎨 **Compose Integration** - Ready-to-use Composable helpers with automatic lifecycle management
 
@@ -79,28 +79,28 @@ dependencies {
 
 PulseMVI provides two complementary components:
 
-- **PulseStore** — Manages UI state for a specific screen component. Handles user actions directly, reacts to broadcasts from the Container, and can emit `PulseUnicast` messages up to the Container.
-- **PulseContainer** — Coordinates multiple Stores. Delivers typed `PulseBroadcast` messages to all registered Stores, receives child unicasts, and can trigger a view refresh.
+- **PulseViewModel** — Manages UI state for a specific screen component. Handles user actions directly, reacts to broadcasts from the Container, and can emit `PulseUnicast` messages up to the Container.
+- **PulseContainer** — Coordinates multiple ViewModels. Delivers typed `PulseBroadcast` messages to all registered ViewModels, receives child unicasts, and can trigger a view refresh.
 
 ```
 User Action
     │
     ▼
-PulseStore.onAction()
+PulseViewModel.onAction()
     │
     └── update { ... } ──▶ UI re-renders
 
-PulseContainer.broadcast(broadcast)      ← Notify all Stores simultaneously
+PulseContainer.broadcast(broadcast)      ← Notify all ViewModels simultaneously
     │
-    └── PulseStore.onReceive(broadcast) ──▶ update { ... } ──▶ UI re-renders
+    └── PulseViewModel.onReceive(broadcast) ──▶ update { ... } ──▶ UI re-renders
 
-PulseStore.unicast(unicast)          ← Notify parent Container
+PulseViewModel.unicast(unicast)          ← Notify parent Container
     │
     └── PulseContainer.onReceived(unicast) ──▶ broadcast(...) / refresh(...) / app logic
 
 PulseContainer.refresh()                 ← Reconstruct the view tree
     │
-    └── View reconstructs (Store state is preserved)
+    └── View reconstructs (ViewModel state is preserved)
 ```
 
 ## Quick Start
@@ -108,41 +108,41 @@ PulseContainer.refresh()                 ← Reconstruct the view tree
 ### 1. Define State, Action, Event, Broadcast, and Unicast
 
 ```kotlin
-// State: the UI state managed by Store
+// State: the UI state managed by ViewModel
 data class CounterState(val count: Int = 0) : PulseState
 
-// Action: user intents dispatched directly to Store
+// Action: user intents dispatched directly to ViewModel
 sealed class CounterAction : PulseAction {
     data object Increment : CounterAction()
     data object Decrement : CounterAction()
     data object Reset : CounterAction()
 }
 
-// Event: one-time side effects emitted from Store
+// Event: one-time side effects emitted from ViewModel
 sealed class CounterEvent : PulseEvent {
     data class ShowMessage(val message: String) : CounterEvent()
 }
 
-// Broadcast: messages delivered from Container to all Stores
+// Broadcast: messages delivered from Container to all ViewModels
 sealed class CounterBroadcast : PulseBroadcast {
     data object Refresh : CounterBroadcast()
     data object ResetNotified : CounterBroadcast()
 }
 
-// Unicast: messages emitted from child Store to Container
+// Unicast: messages emitted from child ViewModel to Container
 sealed interface CounterUnicast : PulseUnicast {
     data object ResetRequested : CounterUnicast
 }
 ```
 
-### 2. Create a Store
+### 2. Create a ViewModel
 
-`PulseStore` manages its own UI state and handles user actions. Override `onSetup` to initialize subscriptions, `onAction` to handle user intents, and `onReceive` to react to broadcasts.
+`PulseViewModel` manages its own UI state and handles user actions. Override `onSetup` to initialize subscriptions, `onAction` to handle user intents, and `onReceive` to react to broadcasts.
 
 ```kotlin
-class CounterStore(
+class CounterViewModel(
     private val repository: CounterRepository,
-) : PulseStore<CounterState, CounterAction, CounterEvent, CounterBroadcast, CounterUnicast>(
+) : PulseViewModel<CounterState, CounterAction, CounterEvent, CounterBroadcast, CounterUnicast>(
     initialUiState = CounterState(),
 ) {
     override fun onSetup() {
@@ -180,12 +180,12 @@ class CounterStore(
 
 ### 3. Create a Container
 
-`PulseContainer` coordinates multiple Stores. Use `broadcast` to send a typed message to all registered Stores, and `refresh` to reconstruct the view.
+`PulseContainer` coordinates multiple ViewModels. Use `broadcast` to send a typed message to all registered ViewModels, and `refresh` to reconstruct the view.
 
 ```kotlin
 class CounterContainer(
-    stores: List<PulseStore<*, *, *, CounterBroadcast, CounterUnicast>>,
-) : PulseContainer<CounterBroadcast, CounterUnicast>(stores = stores) {
+    viewModels: List<PulseViewModel<*, *, *, CounterBroadcast, CounterUnicast>>,
+) : PulseContainer<CounterBroadcast, CounterUnicast>(viewModels = viewModels) {
     override fun onReceived(unicast: CounterUnicast) {
         when (unicast) {
             CounterUnicast.ResetRequested -> broadcast(CounterBroadcast.ResetNotified)
@@ -196,19 +196,19 @@ class CounterContainer(
 
 ### 4. Connect to Compose UI
 
-Instantiate stores in the entry point, then use `PulseApp` for layout and `PulseContent` inside it to observe each Store. `PulseContent` automatically responds to `refresh()` when nested inside `PulseApp`.
+Instantiate ViewModels in the entry point, then use `PulseApp` for layout and `PulseContent` inside it to observe each ViewModel. `PulseContent` automatically responds to `refresh()` when nested inside `PulseApp`.
 
-**Entry point** — create stores once and pass them down:
+**Entry point** — create ViewModels once and pass them down:
 
 ```kotlin
 fun main() = application {
     val repository = remember { CounterRepository() }
-    val store = remember { CounterStore(repository) }
-    val container = remember { CounterContainer(stores = listOf(store)) }
+    val viewModel = remember { CounterViewModel(repository) }
+    val container = remember { CounterContainer(viewModels = listOf(viewModel)) }
 
     Window(onCloseRequest = ::exitApplication, title = "Counter") {
         MaterialTheme {
-            CounterApp(container = container, store = store)
+            CounterApp(container = container, viewModel = viewModel)
         }
     }
 }
@@ -218,30 +218,30 @@ fun main() = application {
 
 ```kotlin
 @Composable
-fun CounterApp(container: CounterContainer, store: CounterStore) {
+fun CounterApp(container: CounterContainer, viewModel: CounterViewModel) {
     PulseApp(container = container) { onRefresh, onBroadcast ->
         Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Row(modifier = Modifier.align(Alignment.TopEnd)) {
                 Button(onClick = { onRefresh() }) { Text("Refresh View") }
                 Button(onClick = { onBroadcast(CounterBroadcast.Refresh) }) { Text("Send Broadcast") }
             }
-            CounterContent(store = store, modifier = Modifier.align(Alignment.Center))
+            CounterContent(viewModel = viewModel, modifier = Modifier.align(Alignment.Center))
         }
     }
 }
 ```
 
-**Content composable** — use `PulseContent` to observe a Store and handle events:
+**Content composable** — use `PulseContent` to observe a ViewModel and handle events:
 
 ```kotlin
 @Composable
-fun CounterContent(store: CounterStore) {
+fun CounterContent(viewModel: CounterViewModel) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     Box {
         PulseContent(
-            store = store,
+            viewModel = viewModel,
             onEvent = { event ->
                 when (event) {
                     is CounterEvent.ShowMessage -> scope.launch { snackbarHostState.showSnackbar(event.message) }
@@ -264,7 +264,7 @@ fun CounterContent(store: CounterStore) {
 
 ## API Reference
 
-### PulseStore
+### PulseViewModel
 
 Base class for managing UI state within a specific screen component.
 
@@ -273,24 +273,24 @@ Base class for managing UI state within a specific screen component.
 | `state: StateFlow<UiState>` | The current UI state as a StateFlow |
 | `currentState: UiState` | Snapshot of the current UI state |
 | `event: Flow<Event>` | Stream of one-time side effects |
-| `coroutineScope` | CoroutineScope tied to the Store's lifecycle |
-| `onSetup()` | Called when the Store is first subscribed to |
+| `coroutineScope` | CoroutineScope tied to the ViewModel's lifecycle |
+| `onSetup()` | Called when the ViewModel is first subscribed to |
 | `onAction(uiAction)` | Called when a user action is dispatched |
 | `onReceive(broadcast)` | Called when the Container broadcasts a message |
 | `unicast(unicast)` | Emits a child-to-parent message |
 | `update { }` | Updates the UI state |
 | `event(effect)` | Emits a one-time side effect |
-| `cancel()` | Cancels the coroutine scope and prepares the Store for reuse |
+| `cancel()` | Cancels the coroutine scope and prepares the ViewModel for reuse |
 
 ### PulseContainer
 
-Base class for coordinating multiple Stores.
+Base class for coordinating multiple ViewModels.
 
 | Member | Description |
 |---|---|
-| `broadcast(broadcast)` | Delivers a broadcast message to all registered Stores |
-| `onReceived(unicast)` | Called when a child Store emits an unicast |
-| `refresh()` | Reconstructs the view while preserving Store state |
+| `broadcast(broadcast)` | Delivers a broadcast message to all registered ViewModels |
+| `onReceived(unicast)` | Called when a child ViewModel emits an unicast |
+| `refresh()` | Reconstructs the view while preserving ViewModel state |
 
 ### Composable Helpers
 
@@ -301,7 +301,7 @@ Manages a `PulseContainer` and provides `onRefresh` and `onBroadcast` callbacks 
 ```kotlin
 PulseApp(container = myContainer) { onRefresh, onBroadcast ->
     // Compose UI
-    PulseContent(store = myStore) { state, onAction ->
+    PulseContent(viewModel = myViewModel) { state, onAction ->
         // Compose UI
     }
 }
@@ -309,11 +309,11 @@ PulseApp(container = myContainer) { onRefresh, onBroadcast ->
 
 #### PulseContent
 
-Observes a `PulseStore` and provides state and action dispatcher to the content block. Automatically cancels the Store's coroutine scope when removed from composition.
+Observes a `PulseViewModel` and provides state and action dispatcher to the content block. Automatically cancels the ViewModel's coroutine scope when removed from composition.
 
 ```kotlin
 PulseContent(
-    store = myStore,
+    viewModel = myViewModel,
     onEvent = { event -> /* handle side effects */ },
 ) { state, onAction ->
     // Compose UI
@@ -322,7 +322,7 @@ PulseContent(
 
 ### PulseBroadcast
 
-Marker interface for type-safe messages delivered from `PulseContainer` to all registered `PulseStore` instances.
+Marker interface for type-safe messages delivered from `PulseContainer` to all registered `PulseViewModel` instances.
 
 ```kotlin
 sealed class MyBroadcast : PulseBroadcast {
@@ -333,7 +333,7 @@ sealed class MyBroadcast : PulseBroadcast {
 
 ### PulseUnicast
 
-Marker interface for type-safe messages emitted from a child `PulseStore` to its parent `PulseContainer`.
+Marker interface for type-safe messages emitted from a child `PulseViewModel` to its parent `PulseContainer`.
 
 ```kotlin
 sealed interface MyUnicast : PulseUnicast {
@@ -343,7 +343,7 @@ sealed interface MyUnicast : PulseUnicast {
 
 ## Example Application
 
-See the [`demo`](demo/) module for a complete counter application demonstrating Store, Container, Broadcast, and Unicast in action.
+See the [`demo`](demo/) module for a complete counter application demonstrating ViewModel, Container, Broadcast, and Unicast in action.
 
 Run the demo:
 

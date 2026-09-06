@@ -1,6 +1,6 @@
 # Broadcast
 
-Broadcast is PulseMVI's mechanism for delivering a typed message from a `PulseContainer` to all of its registered `PulseStore` instances simultaneously.
+Broadcast is PulseMVI's mechanism for delivering a typed message from a `PulseContainer` to all of its registered `PulseViewModel` instances simultaneously.
 
 ## Defining a Broadcast
 
@@ -24,7 +24,7 @@ container.broadcast(AppBroadcast.ThemeChanged(isDark = true))
 
 ## Receiving a Broadcast
 
-Override `onReceive()` in each Store that needs to react:
+Override `onReceive()` in each ViewModel that needs to react:
 
 ```kotlin
 override fun onReceive(broadcast: AppBroadcast) {
@@ -40,27 +40,27 @@ override fun onReceive(broadcast: AppBroadcast) {
 
 | | Broadcast | Event |
 |---|---|---|
-| Direction | Container → all Stores | Store → UI |
+| Direction | Container → all ViewModels | ViewModel → UI |
 | Cardinality | One-to-many | One-to-one |
-| Purpose | Cross-Store coordination | One-time UI side effects |
+| Purpose | Cross-ViewModel coordination | One-time UI side effects |
 | Type parameter | `PulseBroadcast` | `PulseEvent` |
 
-## Example: Syncing Multiple Stores
+## Example: Syncing Multiple ViewModels
 
 ```kotlin
-// Two Stores sharing the same Broadcast and Unicast types
-class HeaderStore : PulseStore<HeaderState, HeaderAction, HeaderEvent, AppBroadcast, AppUnicast>(...) {
+// Two ViewModels sharing the same Broadcast and Unicast types
+class HeaderViewModel : PulseViewModel<HeaderState, HeaderAction, HeaderEvent, AppBroadcast, AppUnicast>(...) {
     override fun onReceive(broadcast: AppBroadcast) {
         if (broadcast is AppBroadcast.UserLoggedOut) update { HeaderState() }
     }
 }
 
-class SidebarStore : PulseStore<SidebarState, SidebarAction, SidebarEvent, AppBroadcast, AppUnicast>(...) {
+class SidebarViewModel : PulseViewModel<SidebarState, SidebarAction, SidebarEvent, AppBroadcast, AppUnicast>(...) {
     override fun onReceive(broadcast: AppBroadcast) {
         if (broadcast is AppBroadcast.UserLoggedOut) update { SidebarState() }
     }
 }
 
-// One call resets both Stores
+// One call resets both ViewModels
 container.broadcast(AppBroadcast.UserLoggedOut)
 ```

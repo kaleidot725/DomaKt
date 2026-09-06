@@ -2,11 +2,11 @@
 
 ```kotlin
 abstract class PulseContainer<Broadcast : PulseBroadcast, Unicast : PulseUnicast>(
-    stores: List<PulseStore<*, *, *, Broadcast, Unicast>>,
+    viewModels: List<PulseViewModel<*, *, *, Broadcast, Unicast>>,
 )
 ```
 
-Coordinates multiple `PulseStore` instances. Provides broadcast delivery, child unicast handling, and view refresh.
+Coordinates multiple `PulseViewModel` instances. Provides broadcast delivery, child unicast handling, and view refresh.
 
 ## Methods
 
@@ -16,7 +16,7 @@ Coordinates multiple `PulseStore` instances. Provides broadcast delivery, child 
 fun broadcast(broadcast: Broadcast)
 ```
 
-Delivers `broadcast` to every `PulseStore` registered at construction time by calling each Store's `onReceive()`.
+Delivers `broadcast` to every `PulseViewModel` registered at construction time by calling each ViewModel's `onReceive()`.
 
 ```kotlin
 container.broadcast(AppBroadcast.UserLoggedOut)
@@ -30,7 +30,7 @@ container.broadcast(AppBroadcast.UserLoggedOut)
 open fun onReceived(unicast: Unicast)
 ```
 
-Called when a registered `PulseStore` emits an unicast. `PulseContainer` collects each Store's `unicast` flow internally and forwards each value to this hook.
+Called when a registered `PulseViewModel` emits an unicast. `PulseContainer` collects each ViewModel's `unicast` flow internally and forwards each value to this hook.
 
 ```kotlin
 override fun onReceived(unicast: AppUnicast) {
@@ -48,7 +48,7 @@ override fun onReceived(unicast: AppUnicast) {
 fun refresh()
 ```
 
-Assigns a new UUID to the container's internal key, causing `PulseApp` to trigger a recomposition of all `PulseContent` blocks inside it. Store state is preserved; only Compose state is discarded.
+Assigns a new UUID to the container's internal key, causing `PulseApp` to trigger a recomposition of all `PulseContent` blocks inside it. ViewModel state is preserved; only Compose state is discarded.
 
 ```kotlin
 container.refresh()
@@ -58,8 +58,8 @@ container.refresh()
 
 ```kotlin
 class AppContainer(
-    stores: List<PulseStore<*, *, *, AppBroadcast, AppUnicast>>,
-) : PulseContainer<AppBroadcast, AppUnicast>(stores = stores) {
+    viewModels: List<PulseViewModel<*, *, *, AppBroadcast, AppUnicast>>,
+) : PulseContainer<AppBroadcast, AppUnicast>(viewModels = viewModels) {
     override fun onReceived(unicast: AppUnicast) {
         when (unicast) {
             AppUnicast.SaveRequested -> broadcast(AppBroadcast.SaveStarted)
@@ -69,10 +69,10 @@ class AppContainer(
 
 // Usage
 val container = remember {
-    AppContainer(stores = listOf(sidebarStore, contentStore))
+    AppContainer(viewModels = listOf(sidebarViewModel, contentViewModel))
 }
 
-// Send to all Stores
+// Send to all ViewModels
 container.broadcast(AppBroadcast.Sync)
 
 // Reconstruct view tree

@@ -1,13 +1,13 @@
-# Store
+# ViewModel
 
-`PulseStore` is the core building block of PulseMVI. It manages the UI state for a single screen or section of your app.
+`PulseViewModel` is the core building block of PulseMVI. It manages the UI state for a single screen or section of your app.
 
-## Creating a Store
+## Creating a ViewModel
 
-Extend `PulseStore` with your five type parameters:
+Extend `PulseViewModel` with your five type parameters:
 
 ```kotlin
-class MyStore : PulseStore<MyState, MyAction, MyEvent, MyBroadcast, MyUnicast>(
+class MyViewModel : PulseViewModel<MyState, MyAction, MyEvent, MyBroadcast, MyUnicast>(
     initialUiState = MyState(),
 ) {
     override fun onSetup() { /* start coroutines here */ }
@@ -20,7 +20,7 @@ class MyStore : PulseStore<MyState, MyAction, MyEvent, MyBroadcast, MyUnicast>(
 
 ### `onSetup()`
 
-Called once when the Store's `state` is first collected. Use this to start long-running coroutines such as repository flows:
+Called once when the ViewModel's `state` is first collected. Use this to start long-running coroutines such as repository flows:
 
 ```kotlin
 override fun onSetup() {

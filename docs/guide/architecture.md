@@ -11,7 +11,7 @@ PulseMVI follows the MVI (Model-View-Intent) pattern and adds three Desktop-spec
 │   User Interaction                                  │
 │        │                                            │
 │        ▼                                            │
-│   onAction(action)  ──────────▶  PulseStore         │
+│   onAction(action)  ──────────▶  PulseViewModel         │
 │                                      │              │
 │                               onAction()            │
 │                                      │              │
@@ -31,22 +31,22 @@ PulseMVI follows the MVI (Model-View-Intent) pattern and adds three Desktop-spec
 
 ## Broadcast Flow
 
-When multiple Stores need to react to the same event, use `PulseContainer.broadcast()`:
+When multiple ViewModels need to react to the same event, use `PulseContainer.broadcast()`:
 
 ```
 Container.broadcast(MyBroadcast.Sync)
         │
-        ├──▶ StoreA.onReceive(Sync)  ──▶ update { }  ──▶ UI re-renders
+        ├──▶ ViewModelA.onReceive(Sync)  ──▶ update { }  ──▶ UI re-renders
         │
-        └──▶ StoreB.onReceive(Sync)  ──▶ update { }  ──▶ UI re-renders
+        └──▶ ViewModelB.onReceive(Sync)  ──▶ update { }  ──▶ UI re-renders
 ```
 
 ## Unicast Flow
 
-When a child Store needs to notify its parent Container, use `PulseStore.unicast()`:
+When a child ViewModel needs to notify its parent Container, use `PulseViewModel.unicast()`:
 
 ```
-StoreA.unicast(MyUnicast.SaveRequested)
+ViewModelA.unicast(MyUnicast.SaveRequested)
         │
         └──▶ Container.onReceived(SaveRequested)
                   │
@@ -56,7 +56,7 @@ StoreA.unicast(MyUnicast.SaveRequested)
 
 ## View Refresh Flow
 
-`Container.refresh()` forces the Compose view tree to reconstruct. Store states are **preserved** — only the Composables are re-created:
+`Container.refresh()` forces the Compose view tree to reconstruct. ViewModel states are **preserved** — only the Composables are re-created:
 
 ```
 Container.refresh()
@@ -65,7 +65,7 @@ Container.refresh()
                   │
                   └──▶ PulseContent re-created (via `key()`)
                             │
-                            └──▶ Store.cancel() then Store re-subscribes
+                            └──▶ ViewModel.cancel() then ViewModel re-subscribes
                                       │
                                       └──▶ onSetup() called again
 ```
@@ -77,30 +77,30 @@ Container.refresh()
 | `PulseState` | Immutable snapshot of UI data |
 | `PulseAction` | User intent — what the user wants to do |
 | `PulseEvent` | One-time side effect — navigation, dialog, snackbar |
-| `PulseBroadcast` | Cross-Store notification from Container |
-| `PulseUnicast` | Child-to-parent notification from Store |
-| `PulseStore` | Owns state; handles actions and broadcasts; can emit unicasts |
-| `PulseContainer` | Coordinates Stores; enables broadcast, unicast handling, and refresh |
+| `PulseBroadcast` | Cross-ViewModel notification from Container |
+| `PulseUnicast` | Child-to-parent notification from ViewModel |
+| `PulseViewModel` | Owns state; handles actions and broadcasts; can emit unicasts |
+| `PulseContainer` | Coordinates ViewModels; enables broadcast, unicast handling, and refresh |
 | `PulseApp` | Compose wrapper that propagates container key |
-| `PulseContent` | Compose wrapper that observes a Store |
+| `PulseContent` | Compose wrapper that observes a ViewModel |
 
 ## Lifecycle
 
 ```
 PulseContent appears
         │
-        └──▶ Store.state subscribed  ──▶  onSetup() called
+        └──▶ ViewModel.state subscribed  ──▶  onSetup() called
                                                │
                                         coroutineScope active
 
 PulseContent disappears
         │
-        └──▶ Store.cancel() called
+        └──▶ ViewModel.cancel() called
                   │
                   └──▶ coroutineScope cancelled + recreated
-                            (Store is ready to be reused)
+                            (ViewModel is ready to be reused)
 ```
 
 ::: tip
-`onSetup()` is called every time the Store is first subscribed to — including after a `refresh()`. Use it to start your data-collection coroutines.
+`onSetup()` is called every time the ViewModel is first subscribed to — including after a `refresh()`. Use it to start your data-collection coroutines.
 :::
