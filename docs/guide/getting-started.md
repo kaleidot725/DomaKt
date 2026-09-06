@@ -2,6 +2,17 @@
 
 This guide walks you through building a simple counter app with PulseMVI.
 
+It uses `rememberPulseViewModel` to own the ViewModel, which comes from the `pulsemvi-navigation3` artifact.
+Add it alongside the core one, or see [ViewModel](/guide/viewmodel) for driving the lifecycle yourself with
+the core artifact alone.
+
+```kotlin
+dependencies {
+    implementation("com.github.kaleidot725:pulsemvi:<version>")
+    implementation("com.github.kaleidot725:pulsemvi-navigation3:<version>")
+}
+```
+
 ## 1. Define State, Action, Event, Broadcast, and Unicast
 
 Start by defining the five types that describe your feature:
@@ -22,28 +33,28 @@ sealed class CounterEvent : PulseEvent {
     data class ShowMessage(val message: String) : CounterEvent()
 }
 
-// Broadcast: messages sent from Container to all Stores
+// Broadcast: messages sent from Container to all ViewModels
 sealed class CounterBroadcast : PulseBroadcast {
     data object Refresh : CounterBroadcast()
 }
 
-// Unicast: messages sent from Store to Container
+// Unicast: messages sent from ViewModel to Container
 sealed interface CounterUnicast : PulseUnicast {
     data object ResetRequested : CounterUnicast
 }
 ```
 
-## 2. Create a Store
+## 2. Create a ViewModel
 
-`PulseStore` manages its own UI state. Override the lifecycle hooks to handle actions and broadcasts:
+`PulseViewModel` manages its own UI state. Override the lifecycle hooks to handle actions and broadcasts:
 
 ```kotlin
-class CounterStore(
+class CounterViewModel(
     private val repository: CounterRepository,
-) : PulseStore<CounterState, CounterAction, CounterEvent, CounterBroadcast, CounterUnicast>(
+) : PulseViewModel<CounterState, CounterAction, CounterEvent, CounterBroadcast, CounterUnicast>(
     initialUiState = CounterState(),
 ) {
-    // Called once when the Store is first observed
+    // Called once, by rememberPulseViewModel, when the ViewModel is created
     override fun onSetup() {
         coroutineScope.launch {
             repository.count.collect { count ->
@@ -78,42 +89,41 @@ class CounterStore(
 
 ## 3. Create a Container
 
-`PulseContainer` takes a list of Stores and lets you broadcast to all of them or refresh the view:
+`PulseContainer` takes a list of ViewModels and lets you broadcast to all of them or refresh the view:
 
 ```kotlin
 class CounterContainer(
-    stores: List<PulseStore<*, *, *, CounterBroadcast, CounterUnicast>>,
-) : PulseContainer<CounterBroadcast, CounterUnicast>(stores = stores)
+    viewModels: List<PulseViewModel<*, *, *, CounterBroadcast, CounterUnicast>>,
+) : PulseContainer<CounterBroadcast, CounterUnicast>(viewModels = viewModels)
 ```
 
 ## 4. Connect to Compose UI
 
 ### Entry point
 
-Create the Store and Container once at the top level:
+Create the ViewModel and Container once at the top level:
 
 ```kotlin
 fun main() = application {
-    val repository = remember { CounterRepository() }
-    val store = remember { CounterStore(repository) }
-    val container = remember { CounterContainer(stores = listOf(store)) }
-
     Window(onCloseRequest = ::exitApplication, title = "Counter") {
         MaterialTheme {
-            CounterApp(container = container, store = store)
+            val viewModel = rememberPulseViewModel { CounterViewModel(CounterRepository()) }
+            val container = rememberPulseContainer { CounterContainer(viewModels = listOf(viewModel)) }
+
+            CounterScreen(container = container, viewModel = viewModel)
         }
     }
 }
 ```
 
-### App composable
+### Screen composable
 
-Wrap your layout with `PulseApp` to enable refresh and broadcast:
+Wrap your layout with `PulseHost` to enable refresh and broadcast:
 
 ```kotlin
 @Composable
-fun CounterApp(container: CounterContainer, store: CounterStore) {
-    PulseApp(container = container) { onRefresh, onBroadcast ->
+fun CounterScreen(container: CounterContainer, viewModel: CounterViewModel) {
+    PulseHost(container = container) { onRefresh, onBroadcast ->
         Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Row(modifier = Modifier.align(Alignment.TopEnd)) {
                 Button(onClick = { onRefresh() }) {
@@ -124,7 +134,7 @@ fun CounterApp(container: CounterContainer, store: CounterStore) {
                 }
             }
             CounterContent(
-                store = store,
+                viewModel = viewModel,
                 modifier = Modifier.align(Alignment.Center),
             )
         }
@@ -134,17 +144,17 @@ fun CounterApp(container: CounterContainer, store: CounterStore) {
 
 ### Content composable
 
-Use `PulseContent` to observe a Store and handle events:
+Use `PulseContent` to observe a ViewModel and handle events:
 
 ```kotlin
 @Composable
-fun CounterContent(store: CounterStore, modifier: Modifier = Modifier) {
+fun CounterContent(viewModel: CounterViewModel, modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     Box(modifier = modifier) {
         PulseContent(
-            store = store,
+            viewModel = viewModel,
             onEvent = { event ->
                 when (event) {
                     is CounterEvent.ShowMessage ->
@@ -180,5 +190,5 @@ The repository includes a complete counter demo. Clone the repo and run:
 ## Next Steps
 
 - [Architecture](/guide/architecture) — understand the data flow in depth
-- [Store](/guide/store) — advanced Store patterns
-- [Container](/guide/container) — coordinating multiple Stores
+- [ViewModel](/guide/viewmodel) — advanced ViewModel patterns
+- [Container](/guide/container) — coordinating multiple ViewModels

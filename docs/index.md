@@ -3,8 +3,8 @@ layout: home
 
 hero:
   name: PulseMVI
-  text: MVI for Compose Desktop
-  tagline: A lightweight, coroutine-based MVI library designed for multi-Composable Compose Desktop layouts.
+  text: MVI for Compose Multiplatform
+  tagline: A lightweight, coroutine-based MVI library for Compose Desktop.
   actions:
     - theme: brand
       text: Get Started
@@ -18,21 +18,21 @@ features:
     title: MVI Architecture
     details: Clear separation of State, Action, Event, Broadcast, and Unicast keeps your code organized and testable.
   - icon: 🔄
-    title: Store & Container
-    details: PulseStore manages state autonomously. PulseContainer coordinates multiple Stores across your app.
+    title: ViewModel & Container
+    details: PulseViewModel manages state autonomously. PulseContainer coordinates multiple ViewModels across your app.
   - icon: 📡
     title: Broadcast
-    details: Type-safe messages delivered from Container to all registered Stores simultaneously.
+    details: Type-safe messages delivered from Container to all registered ViewModels simultaneously.
   - icon: ⬆️
     title: Unicast
-    details: Type-safe messages emitted from Stores to their parent Container for coordination.
+    details: Type-safe messages emitted from ViewModels to their parent Container for coordination.
   - icon: 🖥️
     title: View Refresh
-    details: Forces the entire view tree to reconstruct on demand while preserving Store state.
+    details: Forces the entire view tree to reconstruct on demand while preserving ViewModel state.
   - icon: ⚡
     title: Coroutine-Based
     details: Built on Kotlin Coroutines and StateFlow for efficient, non-blocking reactive state management.
   - icon: 🎨
     title: Compose Integration
-    details: Ready-to-use PulseApp and PulseContent composables with automatic lifecycle management.
+    details: Ready-to-use PulseHost and PulseContent composables with automatic lifecycle management.
 ---

@@ -8,6 +8,9 @@ local.properties
 *.iws
 .DS_Store
 
+# Kotlin
+.kotlin
+
 # VitePress
 docs/node_modules
 docs/.vitepress/dist

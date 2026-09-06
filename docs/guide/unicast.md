@@ -1,8 +1,8 @@
 # Unicast
 
-Unicast is PulseMVI's mechanism for sending a typed message from a `PulseStore` up to its parent `PulseContainer`.
+Unicast is PulseMVI's mechanism for sending a typed message from a `PulseViewModel` up to its parent `PulseContainer`.
 
-Use it when a child Store owns the immediate user action, but the parent Container needs to coordinate a follow-up such as broadcasting the result to sibling Stores.
+Use it when a child ViewModel owns the immediate user action, but the parent Container needs to coordinate a follow-up such as broadcasting the result to sibling ViewModels.
 
 ## Defining a Unicast
 
@@ -14,10 +14,10 @@ sealed interface CounterUnicast : PulseUnicast {
 }
 ```
 
-The same Unicast type is shared by the Container and every Store registered in that Container:
+The same Unicast type is shared by the Container and every ViewModel registered in that Container:
 
 ```kotlin
-class CounterStore : PulseStore<
+class CounterViewModel : PulseViewModel<
     CounterState,
     CounterAction,
     CounterEvent,
@@ -28,15 +28,15 @@ class CounterStore : PulseStore<
 
 ```kotlin
 class CounterContainer(
-    stores: List<PulseStore<*, *, *, CounterBroadcast, CounterUnicast>>,
-) : PulseContainer<CounterBroadcast, CounterUnicast>(stores = stores)
+    viewModels: List<PulseViewModel<*, *, *, CounterBroadcast, CounterUnicast>>,
+) : PulseContainer<CounterBroadcast, CounterUnicast>(viewModels = viewModels)
 ```
 
-This generic pairing means a Store cannot emit a Unicast type that the Container does not understand.
+This generic pairing means a ViewModel cannot emit a Unicast type that the Container does not understand.
 
 ## Sending a Unicast
 
-Call `unicast()` from inside a Store:
+Call `unicast()` from inside a ViewModel:
 
 ```kotlin
 override fun onAction(uiAction: CounterAction) {
@@ -57,7 +57,7 @@ override fun onAction(uiAction: CounterAction) {
 }
 ```
 
-`PulseContainer` collects each registered Store's `unicast` flow internally.
+`PulseContainer` collects each registered ViewModel's `unicast` flow internally.
 
 ## Receiving a Unicast
 
@@ -72,20 +72,20 @@ override fun onReceived(unicast: CounterUnicast) {
 }
 ```
 
-In this example, the Container converts a Store-to-Container Unicast into a Container-to-Stores Broadcast.
+In this example, the Container converts a ViewModel-to-Container Unicast into a Container-to-ViewModels Broadcast.
 
 ## Unicast vs Broadcast vs Event
 
 | | Unicast | Broadcast | Event |
 |---|---|---|---|
-| Direction | Store -> Container | Container -> all Stores | Store -> UI |
+| Direction | ViewModel -> Container | Container -> all ViewModels | ViewModel -> UI |
 | Cardinality | Many-to-one | One-to-many | One-to-one |
-| Purpose | Parent coordination after a child action | Cross-Store notification | One-time UI side effects |
+| Purpose | Parent coordination after a child action | Cross-ViewModel notification | One-time UI side effects |
 | Type parameter | `PulseUnicast` | `PulseBroadcast` | `PulseEvent` |
 
 ## Example: Sharing Counter Updates
 
-Two counter Stores can keep separate local repositories while sharing updates through their parent Container:
+Two counter ViewModels can keep separate local repositories while sharing updates through their parent Container:
 
 ```kotlin
 sealed class CounterBroadcast : PulseBroadcast {
@@ -99,8 +99,8 @@ sealed interface CounterUnicast : PulseUnicast {
 
 ```kotlin
 class CounterContainer(
-    stores: List<PulseStore<*, *, *, CounterBroadcast, CounterUnicast>>,
-) : PulseContainer<CounterBroadcast, CounterUnicast>(stores = stores) {
+    viewModels: List<PulseViewModel<*, *, *, CounterBroadcast, CounterUnicast>>,
+) : PulseContainer<CounterBroadcast, CounterUnicast>(viewModels = viewModels) {
     override fun onReceived(unicast: CounterUnicast) {
         when (unicast) {
             is CounterUnicast.CounterUpdated ->
@@ -111,9 +111,9 @@ class CounterContainer(
 ```
 
 ```kotlin
-class CounterStore(
+class CounterViewModel(
     private val repository: CounterRepository,
-) : PulseStore<CounterState, CounterAction, CounterEvent, CounterBroadcast, CounterUnicast>(
+) : PulseViewModel<CounterState, CounterAction, CounterEvent, CounterBroadcast, CounterUnicast>(
     initialUiState = CounterState(),
 ) {
     override fun onAction(uiAction: CounterAction) {
@@ -145,7 +145,7 @@ The data flow is:
 
 ```text
 Counter A action
-    -> CounterStore.unicast(CounterUpdated(count))
+    -> CounterViewModel.unicast(CounterUpdated(count))
     -> CounterContainer.onReceived(CounterUpdated(count))
     -> CounterContainer.broadcast(CounterBroadcast.CounterUpdated(count))
     -> Counter A and Counter B receive the same count

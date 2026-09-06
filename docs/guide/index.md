@@ -1,27 +1,27 @@
 # What is PulseMVI?
 
-PulseMVI is a lightweight MVI (Model-View-Intent) library for **Compose Desktop**. It extends the standard MVI pattern with three features designed specifically for Desktop's multi-Composable layouts:
+PulseMVI is a lightweight MVI (Model-View-Intent) library for **Compose Desktop**. It extends the standard MVI pattern with three coordination features for multi-Composable layouts:
 
-- **Broadcast** — deliver a typed message from a Container to all registered Stores at once
-- **Unicast** — send a typed message from a child Store up to its Container
-- **View Refresh** — reconstruct the entire Compose view tree on demand without losing Store state
+- **Broadcast** — deliver a typed message from a Container to all registered ViewModels at once
+- **Unicast** — send a typed message from a child ViewModel up to its Container
+- **View Refresh** — reconstruct the entire Compose view tree on demand without losing ViewModel state
 
 ## Why PulseMVI?
 
-In Compose Desktop apps, a single window often contains multiple independent Composable sections, each with its own state. PulseMVI makes it easy to coordinate these sections without tightly coupling them.
+Compose apps often contain multiple independent Composable sections, each with its own state. PulseMVI makes it easy to coordinate these sections without tightly coupling them.
 
 ```
 ┌─────────────────────────────────────┐
 │           Window                    │
 │  ┌──────────┐  ┌──────────────────┐ │
 │  │ SideBar  │  │   Main Content   │ │
-│  │ (Store A)│  │   (Store B)      │ │
+│  │ (ViewModel A)│  │   (ViewModel B)      │ │
 │  └──────────┘  └──────────────────┘ │
 │         PulseContainer              │
 └─────────────────────────────────────┘
 ```
 
-`PulseContainer` sits above both Stores. When you call `container.broadcast(MyBroadcast.Sync)`, both Store A and Store B receive the message and can react independently.
+`PulseContainer` sits above both ViewModels. When you call `container.broadcast(MyBroadcast.Sync)`, both ViewModel A and ViewModel B receive the message and can react independently.
 
 ## Installation
 
@@ -41,9 +41,15 @@ Then add the dependency:
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("com.github.kaleidot725:PulseMVI:<version>")
+    implementation("com.github.kaleidot725:pulsemvi:<version>")
+
+    // Optional: owner scoped lifetimes and Navigation 3 back stack scoping
+    implementation("com.github.kaleidot725:pulsemvi-navigation3:<version>")
 }
 ```
+
+`pulsemvi` alone leaves the ViewModel lifetime to you — see [ViewModel](/guide/viewmodel). Add
+`pulsemvi-navigation3` for `rememberPulseViewModel`, which hands that lifetime to a `ViewModel`.
 
 Replace `<version>` with the latest tag from [GitHub Releases](https://github.com/kaleidot725/PulseMVI/releases).
 
@@ -59,4 +65,4 @@ Replace `<version>` with the latest tag from [GitHub Releases](https://github.co
 
 - [Getting Started](/guide/getting-started) — build your first counter app
 - [Architecture](/guide/architecture) — understand how all the pieces fit together
-- [Unicast](/guide/unicast) — send child Store messages up to a Container
+- [Unicast](/guide/unicast) — send child ViewModel messages up to a Container

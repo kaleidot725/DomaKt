@@ -34,7 +34,7 @@ export default defineConfig({
           text: 'Core Concepts',
           items: [
             { text: 'Architecture', link: '/guide/architecture' },
-            { text: 'Store', link: '/guide/store' },
+            { text: 'ViewModel', link: '/guide/viewmodel' },
             { text: 'Container', link: '/guide/container' },
             { text: 'Broadcast', link: '/guide/broadcast' },
             { text: 'Unicast', link: '/guide/unicast' },
@@ -46,7 +46,7 @@ export default defineConfig({
           text: 'API Reference',
           items: [
             { text: 'Overview', link: '/api/' },
-            { text: 'PulseStore', link: '/api/pulse-store' },
+            { text: 'PulseViewModel', link: '/api/pulse-viewmodel' },
             { text: 'PulseContainer', link: '/api/pulse-container' },
             { text: 'Composables', link: '/api/composables' },
             { text: 'Marker Interfaces', link: '/api/interfaces' },

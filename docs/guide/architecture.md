@@ -1,6 +1,6 @@
 # Architecture
 
-PulseMVI follows the MVI (Model-View-Intent) pattern and adds three Desktop-specific primitives: **Broadcast**, **Unicast**, and **View Refresh**.
+PulseMVI follows the MVI (Model-View-Intent) pattern and adds three coordination primitives: **Broadcast**, **Unicast**, and **View Refresh**.
 
 ## Data Flow
 
@@ -11,7 +11,7 @@ PulseMVI follows the MVI (Model-View-Intent) pattern and adds three Desktop-spec
 │   User Interaction                                  │
 │        │                                            │
 │        ▼                                            │
-│   onAction(action)  ──────────▶  PulseStore         │
+│   onAction(action)  ──────────▶  PulseViewModel         │
 │                                      │              │
 │                               onAction()            │
 │                                      │              │
@@ -31,22 +31,22 @@ PulseMVI follows the MVI (Model-View-Intent) pattern and adds three Desktop-spec
 
 ## Broadcast Flow
 
-When multiple Stores need to react to the same event, use `PulseContainer.broadcast()`:
+When multiple ViewModels need to react to the same event, use `PulseContainer.broadcast()`:
 
 ```
 Container.broadcast(MyBroadcast.Sync)
         │
-        ├──▶ StoreA.onReceive(Sync)  ──▶ update { }  ──▶ UI re-renders
+        ├──▶ ViewModelA.onReceive(Sync)  ──▶ update { }  ──▶ UI re-renders
         │
-        └──▶ StoreB.onReceive(Sync)  ──▶ update { }  ──▶ UI re-renders
+        └──▶ ViewModelB.onReceive(Sync)  ──▶ update { }  ──▶ UI re-renders
 ```
 
 ## Unicast Flow
 
-When a child Store needs to notify its parent Container, use `PulseStore.unicast()`:
+When a child ViewModel needs to notify its parent Container, use `PulseViewModel.unicast()`:
 
 ```
-StoreA.unicast(MyUnicast.SaveRequested)
+ViewModelA.unicast(MyUnicast.SaveRequested)
         │
         └──▶ Container.onReceived(SaveRequested)
                   │
@@ -56,18 +56,16 @@ StoreA.unicast(MyUnicast.SaveRequested)
 
 ## View Refresh Flow
 
-`Container.refresh()` forces the Compose view tree to reconstruct. Store states are **preserved** — only the Composables are re-created:
+`Container.refresh()` forces the Compose view tree to reconstruct. ViewModel states are **preserved** — only the Composables are re-created:
 
 ```
 Container.refresh()
         │
-        └──▶ PulseApp detects new key
+        └──▶ PulseHost detects new key
                   │
-                  └──▶ PulseContent re-created (via `key()`)
+                  └──▶ PulseContent's rendered subtree re-created (via `key()`)
                             │
-                            └──▶ Store.cancel() then Store re-subscribes
-                                      │
-                                      └──▶ onSetup() called again
+                            └──▶ ViewModel is untouched; onSetup() is not repeated
 ```
 
 ## Component Responsibilities
@@ -77,30 +75,34 @@ Container.refresh()
 | `PulseState` | Immutable snapshot of UI data |
 | `PulseAction` | User intent — what the user wants to do |
 | `PulseEvent` | One-time side effect — navigation, dialog, snackbar |
-| `PulseBroadcast` | Cross-Store notification from Container |
-| `PulseUnicast` | Child-to-parent notification from Store |
-| `PulseStore` | Owns state; handles actions and broadcasts; can emit unicasts |
-| `PulseContainer` | Coordinates Stores; enables broadcast, unicast handling, and refresh |
-| `PulseApp` | Compose wrapper that propagates container key |
-| `PulseContent` | Compose wrapper that observes a Store |
+| `PulseBroadcast` | Cross-ViewModel notification from Container |
+| `PulseUnicast` | Child-to-parent notification from ViewModel |
+| `PulseViewModel` | Owns state; handles actions and broadcasts; can emit unicasts |
+| `PulseContainer` | Coordinates ViewModels; enables broadcast, unicast handling, and refresh |
+| `PulseHost` | Compose wrapper that propagates container key |
+| `PulseContent` | Compose wrapper that observes a ViewModel |
 
 ## Lifecycle
 
 ```
-PulseContent appears
+rememberPulseViewModel creates the ViewModel
         │
-        └──▶ Store.state subscribed  ──▶  onSetup() called
-                                               │
-                                        coroutineScope active
-
-PulseContent disappears
-        │
-        └──▶ Store.cancel() called
+        └──▶ Kept in the ViewModelStore of the ViewModelStoreOwner
                   │
-                  └──▶ coroutineScope cancelled + recreated
-                            (Store is ready to be reused)
+                  └──▶ PulseContent observes it ──▶ onSetup() called once
+                                │
+                                └──▶ coroutineScope active
+
+ViewModelStoreOwner cleared
+        │
+        └──▶ ViewModel.onCleared()
+                  │
+                  └──▶ coroutineScope cancelled
+                                (ViewModel is discarded with its owner)
 ```
 
 ::: tip
-`onSetup()` is called every time the Store is first subscribed to — including after a `refresh()`. Use it to start your data-collection coroutines.
+`onSetup()` runs once when `PulseContent` first observes the ViewModel, and the ViewModel stays active for as long as its `ViewModelStoreOwner` lives. A composition restart never repeats setup, and neither does `refresh()`.
+
+Which owner that is decides the ViewModel's lifetime. Creating the ViewModel under the host owner keeps it alive for the whole screen. Creating it inside a Navigation 3 destination, with `rememberPulseNavEntryDecorators()` as the `NavDisplay` decorators, scopes it to that back stack entry: covering the route with another destination keeps the ViewModel, popping the route cancels it. The demo builds every destination that way.
 :::
