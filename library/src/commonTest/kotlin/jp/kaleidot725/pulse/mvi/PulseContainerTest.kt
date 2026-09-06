@@ -7,15 +7,15 @@ import kotlin.test.assertEquals
 
 class PulseContainerTest {
     @Test
-    fun broadcastReachesEveryStore() {
-        val firstStore = BroadcastStore()
-        val secondStore = BroadcastStore()
-        val container = TestContainer(listOf(firstStore, secondStore))
+    fun broadcastReachesEveryViewModel() {
+        val firstViewModel = BroadcastViewModel()
+        val secondViewModel = BroadcastViewModel()
+        val container = TestContainer(listOf(firstViewModel, secondViewModel))
 
         container.broadcast(ContainerBroadcast.Refresh)
 
-        assertEquals(1, firstStore.receivedCount)
-        assertEquals(1, secondStore.receivedCount)
+        assertEquals(1, firstViewModel.receivedCount)
+        assertEquals(1, secondViewModel.receivedCount)
     }
 
     @Test
@@ -30,14 +30,14 @@ class PulseContainerTest {
 
     @Test
     fun closeStopsUnicastCollection() {
-        val store = BroadcastStore()
-        val container = TestContainer(listOf(store), coroutineDispatcher = Dispatchers.Unconfined)
+        val viewModel = BroadcastViewModel()
+        val container = TestContainer(listOf(viewModel), coroutineDispatcher = Dispatchers.Unconfined)
 
-        store.unicast(ContainerUnicast)
+        viewModel.unicast(ContainerUnicast)
         assertEquals(1, container.receivedCount)
 
         container.close()
-        store.unicast(ContainerUnicast)
+        viewModel.unicast(ContainerUnicast)
 
         assertEquals(1, container.receivedCount)
     }
@@ -55,8 +55,8 @@ private sealed interface ContainerBroadcast : PulseBroadcast {
 
 private data object ContainerUnicast : PulseUnicast
 
-private class BroadcastStore :
-    PulseStore<ContainerState, ContainerAction, ContainerEvent, ContainerBroadcast, ContainerUnicast>(ContainerState) {
+private class BroadcastViewModel :
+    PulseViewModel<ContainerState, ContainerAction, ContainerEvent, ContainerBroadcast, ContainerUnicast>(ContainerState) {
     var receivedCount: Int = 0
 
     override fun onAction(uiAction: ContainerAction) = Unit
@@ -67,9 +67,9 @@ private class BroadcastStore :
 }
 
 private class TestContainer(
-    stores: List<PulseStore<*, *, *, ContainerBroadcast, ContainerUnicast>>,
+    viewModels: List<PulseViewModel<*, *, *, ContainerBroadcast, ContainerUnicast>>,
     coroutineDispatcher: CoroutineDispatcher = Dispatchers.Default,
-) : PulseContainer<ContainerBroadcast, ContainerUnicast>(stores, coroutineDispatcher) {
+) : PulseContainer<ContainerBroadcast, ContainerUnicast>(viewModels, coroutineDispatcher) {
     var receivedCount: Int = 0
 
     override fun onReceived(unicast: ContainerUnicast) {

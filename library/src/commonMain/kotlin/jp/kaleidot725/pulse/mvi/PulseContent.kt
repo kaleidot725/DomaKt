@@ -37,14 +37,17 @@ public fun <
     Broadcast : PulseBroadcast,
     Unicast : PulseUnicast,
 > PulseContent(
-    store: PulseStore<State, Action, Event, Broadcast, Unicast>,
+    viewModel: PulseViewModel<State, Action, Event, Broadcast, Unicast>,
     onEvent: (Event) -> Unit = {},
     content: @Composable ((State, ((Action) -> Unit)) -> Unit) = { _, _ -> },
 ) {
     val containerKey = LocalPulseContainerKey.current
-    val state by store.state.collectAsState()
-    val onAction = store::onAction
-    LaunchedEffect(store) { store.event.collect { onEvent(it) } }
+    val state by viewModel.state.collectAsState()
+    val onAction = viewModel::onAction
+    LaunchedEffect(viewModel) {
+        viewModel.setupOnce()
+        viewModel.event.collect { onEvent(it) }
+    }
 
     key(containerKey) {
         content(state, onAction)

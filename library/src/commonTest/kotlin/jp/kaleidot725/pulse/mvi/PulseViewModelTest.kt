@@ -17,84 +17,84 @@ import kotlin.test.assertFalse
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
-class PulseStoreTest {
+class PulseViewModelTest {
     @Test
     fun usesConfiguredCoroutineDispatcher() {
-        val store = TestStore(coroutineDispatcher = Dispatchers.Unconfined)
+        val viewModel = TestViewModel(coroutineDispatcher = Dispatchers.Unconfined)
 
-        assertSame(Dispatchers.Unconfined, store.coroutineScope.coroutineContext[ContinuationInterceptor])
+        assertSame(Dispatchers.Unconfined, viewModel.coroutineScope.coroutineContext[ContinuationInterceptor])
     }
 
     @Test
     fun setupIsNotRunUntilTheOwnerStartsIt() {
-        val store = TestStore()
+        val viewModel = TestViewModel()
 
-        assertEquals(0, store.setupCount)
+        assertEquals(0, viewModel.setupCount)
 
-        store.onSetup()
+        viewModel.onSetup()
 
-        assertEquals(1, store.setupCount)
-        assertFalse(requireNotNull(store.setupJob).isCancelled)
+        assertEquals(1, viewModel.setupCount)
+        assertFalse(requireNotNull(viewModel.setupJob).isCancelled)
     }
 
     @Test
     fun cancelStopsWorkStartedInSetup() {
-        val store = TestStore()
+        val viewModel = TestViewModel()
 
-        store.onSetup()
-        val setupJob = requireNotNull(store.setupJob)
-        store.cancel()
+        viewModel.onSetup()
+        val setupJob = requireNotNull(viewModel.setupJob)
+        viewModel.cancel()
 
         assertTrue(setupJob.isCancelled)
     }
 
     @Test
     fun closeLeavesNoScopeToLaunchInto() {
-        val store = TestStore()
+        val viewModel = TestViewModel()
 
-        store.onSetup()
-        val setupJob = requireNotNull(store.setupJob)
-        store.close()
+        viewModel.onSetup()
+        val setupJob = requireNotNull(viewModel.setupJob)
+        viewModel.close()
 
         assertTrue(setupJob.isCancelled)
-        assertFalse(store.coroutineScope.isActive)
+        assertFalse(viewModel.coroutineScope.isActive)
     }
 
     @Test
     fun eventsEmittedWithNoCollectorKeepTheirOrder() =
         runTest {
-            val store = TestStore()
+            val viewModel = TestViewModel()
 
-            store.event(TestEvent.Message("first"))
-            store.event(TestEvent.Message("second"))
+            viewModel.event(TestEvent.Message("first"))
+            viewModel.event(TestEvent.Message("second"))
 
             assertEquals(
                 listOf(TestEvent.Message("first"), TestEvent.Message("second")),
-                store.event.take(2).toList(),
+                viewModel.event.take(2).toList(),
             )
         }
 
     @Test
     fun eventBufferDropsTheOldestOnceItIsFull() =
         runTest {
-            val store = TestStore()
+            val viewModel = TestViewModel()
 
-            repeat(70) { store.event(TestEvent.Message("event $it")) }
+            repeat(70) { viewModel.event(TestEvent.Message("event $it")) }
 
-            assertEquals(TestEvent.Message("event 6"), store.event.first())
+            assertEquals(TestEvent.Message("event 6"), viewModel.event.first())
         }
 
     @Test
     fun stateIsPreservedAcrossSetups() {
-        val store = TestStore()
+        val viewModel = TestViewModel()
 
-        store.onSetup()
-        store.update { copy(value = 42) }
-        store.cancel()
-        store.onSetup()
+        viewModel.onSetup()
+        viewModel.update { copy(value = 42) }
+        viewModel.cancel()
+        viewModel.onSetup()
 
-        assertEquals(TestState(value = 42), store.currentState)
-        assertEquals(2, store.setupCount)
+        assertEquals(TestState(value = 42), viewModel.currentState)
+        assertEquals(2, viewModel.setupCount)
     }
 }
 
@@ -114,9 +114,9 @@ private data object TestBroadcast : PulseBroadcast
 
 private data object TestUnicast : PulseUnicast
 
-private class TestStore(
+private class TestViewModel(
     coroutineDispatcher: CoroutineDispatcher = Dispatchers.Default,
-) : PulseStore<TestState, TestAction, TestEvent, TestBroadcast, TestUnicast>(
+) : PulseViewModel<TestState, TestAction, TestEvent, TestBroadcast, TestUnicast>(
         initialUiState = TestState(),
         coroutineDispatcher = coroutineDispatcher,
     ) {

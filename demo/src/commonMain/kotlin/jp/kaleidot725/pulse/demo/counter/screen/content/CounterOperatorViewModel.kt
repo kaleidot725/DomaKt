@@ -6,13 +6,13 @@ import jp.kaleidot725.pulse.demo.counter.screen.content.state.CounterOperatorEve
 import jp.kaleidot725.pulse.demo.counter.screen.content.state.CounterOperatorState
 import jp.kaleidot725.pulse.demo.counter.screen.state.CounterBroadcast
 import jp.kaleidot725.pulse.demo.counter.screen.state.CounterUnicast
-import jp.kaleidot725.pulse.mvi.PulseStore
+import jp.kaleidot725.pulse.mvi.PulseViewModel
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 
-class CounterOperatorStore(
+class CounterOperatorViewModel(
     private val repository: CounterRepository,
-) : PulseStore<CounterOperatorState, CounterOperatorAction, CounterOperatorEvent, CounterBroadcast, CounterUnicast>(
+) : PulseViewModel<CounterOperatorState, CounterOperatorAction, CounterOperatorEvent, CounterBroadcast, CounterUnicast>(
         initialUiState = CounterOperatorState(),
     ) {
     override fun onSetup() {

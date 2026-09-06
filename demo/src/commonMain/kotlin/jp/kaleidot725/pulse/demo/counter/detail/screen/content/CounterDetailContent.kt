@@ -19,10 +19,10 @@ import jp.kaleidot725.pulse.mvi.PulseContent
 
 @Composable
 fun CounterDetailContent(
-    store: CounterDetailStore,
+    viewModel: CounterDetailViewModel,
     onBack: () -> Unit,
 ) {
-    PulseContent(store = store) { state, onAction ->
+    PulseContent(viewModel = viewModel) { state, onAction ->
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,

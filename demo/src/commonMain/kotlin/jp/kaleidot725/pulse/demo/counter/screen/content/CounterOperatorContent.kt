@@ -24,14 +24,14 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun CounterOperatorContent(
-    store: CounterOperatorStore,
+    viewModel: CounterOperatorViewModel,
     snackbarHostState: SnackbarHostState,
     onShowCounterDetails: (Int) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
 
     PulseContent(
-        store = store,
+        viewModel = viewModel,
         onEvent = { event ->
             when (event) {
                 is CounterOperatorEvent.ShowMessage -> {

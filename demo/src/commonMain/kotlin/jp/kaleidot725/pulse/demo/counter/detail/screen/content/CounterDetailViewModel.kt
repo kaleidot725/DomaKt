@@ -5,11 +5,11 @@ import jp.kaleidot725.pulse.demo.counter.detail.screen.content.state.CounterDeta
 import jp.kaleidot725.pulse.demo.counter.detail.screen.content.state.CounterDetailState
 import jp.kaleidot725.pulse.demo.counter.screen.state.CounterBroadcast
 import jp.kaleidot725.pulse.demo.counter.screen.state.CounterUnicast
-import jp.kaleidot725.pulse.mvi.PulseStore
+import jp.kaleidot725.pulse.mvi.PulseViewModel
 
-class CounterDetailStore(
+class CounterDetailViewModel(
     private val initialCount: Int,
-) : PulseStore<CounterDetailState, CounterDetailAction, CounterDetailEvent, CounterBroadcast, CounterUnicast>(
+) : PulseViewModel<CounterDetailState, CounterDetailAction, CounterDetailEvent, CounterBroadcast, CounterUnicast>(
         initialUiState = CounterDetailState(),
     ) {
     override fun onSetup() {

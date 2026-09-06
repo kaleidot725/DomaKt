@@ -1,7 +1,6 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.compose")
-    id("com.android.library")
     id("org.jetbrains.compose")
     `maven-publish`
 }
@@ -17,12 +16,6 @@ repositories {
 kotlin {
     explicitApi()
     jvm()
-    androidTarget {
-        publishLibraryVariants("release")
-    }
-    // navigation3-ui does not publish iosX64, so this module skips the Intel simulator target.
-    iosArm64()
-    iosSimulatorArm64()
     jvmToolchain(17)
 
     sourceSets {
@@ -39,18 +32,6 @@ kotlin {
                 implementation(kotlin("test"))
             }
         }
-        iosTest.dependencies {
-            implementation("org.jetbrains.compose.ui:ui-test:1.10.1")
-        }
-    }
-}
-
-android {
-    namespace = "jp.kaleidot725.pulse.mvi.navigation3"
-    compileSdk = 36
-
-    defaultConfig {
-        minSdk = 21
     }
 }
 
@@ -60,7 +41,7 @@ publishing {
 
         pom {
             name.set("PulseMVI Navigation 3")
-            description.set("Navigation 3 and ViewModel owned Store and Container lifetimes for PulseMVI")
+            description.set("Navigation 3 owned PulseViewModel and PulseContainer lifetimes for PulseMVI")
             url.set("https://github.com/kaleidot725/PulseMVI")
 
             licenses {
@@ -77,11 +58,5 @@ publishing {
                 }
             }
         }
-    }
-}
-
-afterEvaluate {
-    publishing.publications.named<MavenPublication>("androidRelease") {
-        artifactId = "pulsemvi-navigation3-android"
     }
 }

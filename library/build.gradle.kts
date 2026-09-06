@@ -1,7 +1,6 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.compose")
-    id("com.android.library")
     id("org.jetbrains.compose")
     `maven-publish`
 }
@@ -17,18 +16,13 @@ repositories {
 kotlin {
     explicitApi()
     jvm()
-    androidTarget {
-        publishLibraryVariants("release")
-    }
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
     jvmToolchain(17)
 
     sourceSets {
         val commonMain by getting {
             dependencies {
                 api("org.jetbrains.compose.runtime:runtime:1.10.1")
+                api("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel:2.10.0")
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
             }
         }
@@ -38,15 +32,6 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
             }
         }
-    }
-}
-
-android {
-    namespace = "jp.kaleidot725.pulse.mvi"
-    compileSdk = 35
-
-    defaultConfig {
-        minSdk = 21
     }
 }
 
@@ -73,11 +58,5 @@ publishing {
                 }
             }
         }
-    }
-}
-
-afterEvaluate {
-    publishing.publications.named<MavenPublication>("androidRelease") {
-        artifactId = "pulsemvi-android"
     }
 }

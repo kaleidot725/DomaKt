@@ -1,5 +1,6 @@
 package jp.kaleidot725.pulse.mvi
 
+import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -12,18 +13,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 public abstract class PulseContainer<Broadcast : PulseBroadcast, Unicast : PulseUnicast>(
-    private val stores: List<PulseStore<*, *, *, Broadcast, Unicast>>,
+    private val viewModels: List<PulseViewModel<*, *, *, Broadcast, Unicast>>,
     coroutineDispatcher: CoroutineDispatcher = Dispatchers.Default,
-) {
+) : ViewModel() {
     private val coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + coroutineDispatcher)
 
     private val containerKey: MutableStateFlow<Long> = MutableStateFlow(0L)
     internal val key: StateFlow<Long> = containerKey.asStateFlow()
 
     init {
-        stores.forEach { store ->
+        viewModels.forEach { viewModel ->
             coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
-                store.unicast.collect { unicast -> onReceived(unicast) }
+                viewModel.unicast.collect { unicast -> onReceived(unicast) }
             }
         }
     }
@@ -33,17 +34,21 @@ public abstract class PulseContainer<Broadcast : PulseBroadcast, Unicast : Pulse
     }
 
     public fun broadcast(broadcast: Broadcast) {
-        stores.forEach { it.onReceive(broadcast) }
+        viewModels.forEach { it.onReceive(broadcast) }
     }
 
     /**
-     * Cancels the Container scope and stops collecting Unicast messages from the Stores.
+     * Cancels the Container scope and stops collecting Unicast messages from the ViewModels.
      *
      * Call this when the Container is gone for good. [rememberPulseContainer] calls it for you when
      * the owning [androidx.lifecycle.ViewModelStore] is cleared.
      */
     public fun close() {
         coroutineScope.cancel()
+    }
+
+    override fun onCleared() {
+        close()
     }
 
     public open fun onReceived(unicast: Unicast) {}

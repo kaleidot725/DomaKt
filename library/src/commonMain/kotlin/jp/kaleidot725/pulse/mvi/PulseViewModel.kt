@@ -1,5 +1,6 @@
 package jp.kaleidot725.pulse.mvi
 
+import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +18,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 
-public abstract class PulseStore<
+/**
+ * Owns the state of one screen or component: holds [UiState], handles [UiAction], emits [Event] and
+ * [Unicast], and receives [Broadcast] from its [PulseContainer].
+ *
+ * A [ViewModel], so anything that creates ViewModels can create it — `viewModel()`,
+ * `koinViewModel()`, or `rememberPulseViewModel` from `pulsemvi-navigation3` — and its lifetime is
+ * the owning `ViewModelStore`'s. [onSetup] runs once, the first time a [PulseContent] observes it;
+ * [onCleared] cancels the work it started.
+ */
+public abstract class PulseViewModel<
     UiState : PulseState,
     UiAction : PulseAction,
     Event : PulseEvent,
@@ -26,7 +36,7 @@ public abstract class PulseStore<
 >(
     private val initialUiState: UiState,
     private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.Default,
-) {
+) : ViewModel() {
     public var coroutineScope: CoroutineScope = createCoroutineScope(coroutineDispatcher)
         private set
 
@@ -45,6 +55,20 @@ public abstract class PulseStore<
 
     public val unicast: SharedFlow<Unicast> = _unicast.asSharedFlow()
 
+    private var isSetUp: Boolean = false
+
+    /**
+     * Runs [onSetup] the first time this instance is observed, and never again.
+     *
+     * Called by [PulseContent]. Re-entering the composition does not repeat it, because the
+     * instance outlives the composition.
+     */
+    internal fun setupOnce() {
+        if (isSetUp) return
+        isSetUp = true
+        onSetup()
+    }
+
     public open fun onSetup() {}
 
     public abstract fun onAction(uiAction: UiAction)
@@ -52,10 +76,10 @@ public abstract class PulseStore<
     public open fun onReceive(broadcast: Broadcast) {}
 
     /**
-     * Cancels the work started in [onSetup] and prepares the Store to be set up again.
+     * Cancels the work started in [onSetup] and prepares the ViewModel to be set up again.
      *
      * The scope is replaced with a fresh one, so a later [onSetup] runs normally and the state is
-     * kept. Use this when the Store may become active again; use [close] when it will not.
+     * kept. Use this when the ViewModel may become active again; use [close] when it will not.
      */
     public fun cancel() {
         coroutineScope.cancel()
@@ -66,10 +90,14 @@ public abstract class PulseStore<
      * Cancels the work started in [onSetup] for good.
      *
      * Unlike [cancel] this does not replace the scope, so nothing launched afterwards can outlive
-     * the Store. Anything still holding a reference gets a cancelled scope rather than a live one.
+     * the ViewModel. Anything still holding a reference gets a cancelled scope rather than a live one.
      */
     public fun close() {
         coroutineScope.cancel()
+    }
+
+    override fun onCleared() {
+        close()
     }
 
     public fun update(block: UiState.() -> UiState) {

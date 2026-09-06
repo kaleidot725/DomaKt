@@ -39,7 +39,7 @@ class DemoNavigationTest {
     }
 
     @Test
-    fun detailStoreIsScopedToItsRouteWhileCounterSurvives() {
+    fun detailViewModelIsScopedToItsRouteWhileCounterSurvives() {
         composeRule.setContent { DemoApp() }
 
         composeRule.onNodeWithText("+").performClick()

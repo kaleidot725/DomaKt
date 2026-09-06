@@ -11,12 +11,6 @@ local.properties
 # Kotlin
 .kotlin
 
-# Xcode
-xcuserdata/
-*.xcuserstate
-iosApp/build
-DerivedData/
-
 # VitePress
 docs/node_modules
 docs/.vitepress/dist

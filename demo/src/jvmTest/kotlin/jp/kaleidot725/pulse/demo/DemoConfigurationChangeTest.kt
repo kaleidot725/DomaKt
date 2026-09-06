@@ -19,9 +19,9 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Reproduces what an Android configuration change does to the composition: the whole tree is thrown
- * away and rebuilt while the host [ViewModelStoreOwner] survives. The Store is expected to survive
- * with it, so its state is kept and `onSetup()` is not repeated.
+ * Reproduces a host driven composition restart: the whole tree is thrown away and rebuilt while the
+ * host [ViewModelStoreOwner] survives. The ViewModel is expected to survive with it, so its state is
+ * kept and `onSetup()` is not repeated.
  */
 @OptIn(ExperimentalTestApi::class)
 class DemoConfigurationChangeTest {
@@ -29,7 +29,7 @@ class DemoConfigurationChangeTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun storeSurvivesCompositionRecreationWhileOwnerIsRetained() {
+    fun viewModelSurvivesCompositionRecreationWhileOwnerIsRetained() {
         val owner = RetainedViewModelStoreOwner()
         val generation = mutableStateOf(0)
 
@@ -52,7 +52,7 @@ class DemoConfigurationChangeTest {
     }
 
     @Test
-    fun storeIsRecreatedOnceTheOwnerIsCleared() {
+    fun viewModelIsRecreatedOnceTheOwnerIsCleared() {
         val owner = RetainedViewModelStoreOwner()
         val generation = mutableStateOf(0)
 
