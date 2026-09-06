@@ -4,12 +4,14 @@ import jp.kaleidot725.pulse.demo.grid.area.AreaPosition
 import jp.kaleidot725.pulse.mvi.PulseState
 
 /**
- * How this area was touched by the last pulse. A diagonal area is left out of the pulse entirely, so
- * it has no role of its own.
+ * How this area was touched by the last pulse, and what that is worth to it. A diagonal area is left
+ * out of the pulse entirely, so it has no role of its own.
  */
-enum class PulseRole {
-    Origin,
-    Neighbor,
+enum class PulseRole(
+    val gain: Int,
+) {
+    Origin(gain = 2),
+    Neighbor(gain = 1),
 }
 
 data class AreaState(

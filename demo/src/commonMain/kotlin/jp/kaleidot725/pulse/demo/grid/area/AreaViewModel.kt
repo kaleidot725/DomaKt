@@ -28,7 +28,7 @@ class AreaViewModel(
     override fun onAction(uiAction: AreaAction) {
         when (uiAction) {
             AreaAction.Pulse -> {
-                gain(ORIGIN_GAIN, PulseRole.Origin)
+                gain(PulseRole.Origin)
                 unicast(GridUnicast.Pulsed(currentState.position))
             }
         }
@@ -47,24 +47,17 @@ class AreaViewModel(
         if (origin == position) return
         if (origin !in position.neighbors) return
 
-        gain(NEIGHBOR_GAIN, PulseRole.Neighbor)
+        gain(PulseRole.Neighbor)
     }
 
-    private fun gain(
-        amount: Int,
-        role: PulseRole,
-    ) {
+    private fun gain(role: PulseRole) {
         val before = currentState.count
-        update { copy(count = count + amount, lastRole = role, pulseId = pulseId + 1) }
+        update { copy(count = count + role.gain, lastRole = role, pulseId = pulseId + 1) }
 
         if (before < CHARGED_AT && currentState.count >= CHARGED_AT) {
             event(AreaEvent.Charged(currentState.position, currentState.count))
         }
     }
-
-    private companion object {
-        const val ORIGIN_GAIN = 2
-        const val NEIGHBOR_GAIN = 1
-        const val CHARGED_AT = 12
-    }
 }
+
+private const val CHARGED_AT = 12

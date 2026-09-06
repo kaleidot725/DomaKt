@@ -118,12 +118,7 @@ private fun AreaCell(
 }
 
 private val PulseRole?.caption: String
-    get() =
-        when (this) {
-            PulseRole.Origin -> "origin +2"
-            PulseRole.Neighbor -> "neighbor +1"
-            null -> "out of reach"
-        }
+    get() = if (this == null) "out of reach" else "${name.lowercase()} +$gain"
 
 private val AreaPosition.hue: Float
     get() =
